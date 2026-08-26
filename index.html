@@ -1,0 +1,2773 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apex Finance — Institutional Dark Finance Dashboard</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- React 18 & Babel for Zero-Setup Single File Execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              bg: '#0B0F14',
+              bgOled: '#05070A',
+              card: '#11161F',
+              cardHover: '#161D29',
+              cardSubtle: '#0E131A',
+              border: '#1E2633',
+              borderHover: '#2A3547',
+              borderLight: '#18202C',
+              accent: '#10B981',
+              accentHover: '#059669',
+              accentMuted: 'rgba(16, 185, 129, 0.12)',
+              danger: '#F43F5E',
+              dangerMuted: 'rgba(244, 63, 94, 0.12)',
+              warning: '#F59E0B',
+              info: '#3B82F6',
+              purple: '#8B5CF6',
+              textPrimary: '#F8FAFC',
+              textSecondary: '#94A3B8',
+              textMuted: '#64748B',
+            }
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3)',
+            'card-hover': '0 8px 30px -4px rgba(0, 0, 0, 0.6), 0 4px 10px -2px rgba(0, 0, 0, 0.4)',
+            'glow-green': '0 0 25px -5px rgba(16, 185, 129, 0.3)',
+            'glow-blue': '0 0 25px -5px rgba(59, 130, 246, 0.3)',
+            'modal': '0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0B0F14;
+      color: #F8FAFC;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Custom ultra-clean dark scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F14;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E2633;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2E3A4E;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Subtle ambient mesh background */
+    .bg-mesh-glow {
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.035) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.035) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.025) 0px, transparent 50%);
+    }
+
+    .glass-card {
+      background: rgba(17, 22, 31, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .glass-card-hover {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-hover:hover {
+      background: rgba(22, 29, 41, 0.95);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+    }
+
+    /* Card Chip Pattern */
+    .credit-card-gradient {
+      background: linear-gradient(135deg, #161F2E 0%, #0B0F14 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-[#0B0F14] text-slate-100 min-h-screen selection:bg-emerald-500/20 selection:text-emerald-400">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- CURRENCIES & RATES ---
+    const CURRENCIES = {
+      USD: { symbol: '$', name: 'US Dollar', rate: 1.0 },
+      EUR: { symbol: '€', name: 'Euro', rate: 0.92 },
+      GBP: { symbol: '£', name: 'British Pound', rate: 0.78 },
+      SGD: { symbol: 'S$', name: 'Singapore Dollar', rate: 1.34 }
+    };
+
+    // --- INITIAL DATA STORE ---
+    const INITIAL_ACCOUNTS = [
+      { id: "acc-1", name: "Primary Operating", institution: "Silicon Valley Bank", type: "Checking", number: "••• 8924", balance: 118450.25, color: "#10B981", badge: "Primary", routing: "121000358" },
+      { id: "acc-2", name: "Treasury Vault (5.1% APY)", institution: "Mercury Treasury MM", type: "Money Market", number: "••• 4109", balance: 24500.00, color: "#3B82F6", badge: "Yield", routing: "021000021" },
+      { id: "acc-3", name: "Stripe Settlement Float", institution: "Stripe Merchant", type: "Settlement", number: "••• 3371", balance: 5970.20, color: "#8B5CF6", badge: "Clearing", routing: "031000053" },
+      { id: "acc-4", name: "Apex Black Corporate Card", institution: "Brex Commercial", type: "Charge Card", number: "••• 7712", balance: -3240.10, limit: 50000.00, color: "#F59E0B", badge: "Corporate", routing: "N/A" }
+    ];
+
+    const INITIAL_TRANSACTIONS = [
+      { id: "TXN-9082", date: "Aug 26, 2026", time: "14:15 UTC", desc: "Enterprise SaaS Retainer - Helix AI", merchant: "Helix Intelligence Corp", category: "Income", account: "Primary Operating", amount: 12500.00, type: "income", status: "Completed", icon: "ShieldCheck", authCode: "AUTH-99214" },
+      { id: "TXN-9081", date: "Aug 25, 2026", time: "09:40 UTC", desc: "Amazon Web Services (AWS US-East)", merchant: "AWS Cloud Infrastructure", category: "Cloud & Tech", account: "Apex Black Corporate Card", amount: -1840.50, type: "expense", status: "Completed", icon: "Cloud", authCode: "AUTH-88412" },
+      { id: "TXN-9080", date: "Aug 24, 2026", time: "18:22 UTC", desc: "OpenAI API Platform Tier 4", merchant: "OpenAI LLC", category: "Software & SaaS", account: "Apex Black Corporate Card", amount: -620.00, type: "expense", status: "Completed", icon: "Cpu", authCode: "AUTH-77312" },
+      { id: "TXN-9079", date: "Aug 24, 2026", time: "11:05 UTC", desc: "Institutional Client Milestone Payout", merchant: "Aegis Capital Advisors", category: "Income", account: "Primary Operating", amount: 8200.00, type: "income", status: "Completed", icon: "CheckCircle", authCode: "AUTH-66129" },
+      { id: "TXN-9078", date: "Aug 22, 2026", time: "00:01 UTC", desc: "Treasury Monthly Yield Distribution", merchant: "Mercury Treasury MM", category: "Income", account: "Treasury Vault (5.1% APY)", amount: 104.16, type: "income", status: "Completed", icon: "Coins", authCode: "AUTH-55091" },
+      { id: "TXN-9077", date: "Aug 21, 2026", time: "16:30 UTC", desc: "GitHub Enterprise & Copilot (25 seats)", merchant: "GitHub Inc", category: "Software & SaaS", account: "Apex Black Corporate Card", amount: -340.00, type: "expense", status: "Completed", icon: "Code", authCode: "AUTH-44102" },
+      { id: "TXN-9076", date: "Aug 20, 2026", time: "10:15 UTC", desc: "Google Workspace & GCP Storage", merchant: "Google Cloud Platform", category: "Cloud & Tech", account: "Primary Operating", amount: -285.40, type: "expense", status: "Completed", icon: "Mail", authCode: "AUTH-33981" },
+      { id: "TXN-9075", date: "Aug 19, 2026", time: "15:45 UTC", desc: "Contract Core Engineering Refactor", merchant: "DevSquad Studios Ltd", category: "Contractors & Payroll", account: "Primary Operating", amount: -1850.00, type: "expense", status: "Pending", icon: "UserCheck", authCode: "AUTH-22871" },
+      { id: "TXN-9074", date: "Aug 18, 2026", time: "12:00 UTC", desc: "Figma Enterprise Org Design Seats", merchant: "Figma Inc", category: "Software & SaaS", account: "Apex Black Corporate Card", amount: -150.00, type: "expense", status: "Completed", icon: "Figma", authCode: "AUTH-11762" },
+      { id: "TXN-9073", date: "Aug 16, 2026", time: "08:10 UTC", desc: "Stripe Daily Platform Merchant Settlement", merchant: "Stripe Payments", category: "Income", account: "Stripe Settlement Float", amount: 3950.00, type: "income", status: "Completed", icon: "CreditCard", authCode: "AUTH-00651" },
+      { id: "TXN-9072", date: "Aug 15, 2026", time: "19:20 UTC", desc: "SF Tech Executive Summit Hotel & Travel", merchant: "United Airlines & Hyatt", category: "Travel & Dining", account: "Apex Black Corporate Card", amount: -739.00, type: "expense", status: "Completed", icon: "Navigation", authCode: "AUTH-99540" },
+      { id: "TXN-9071", date: "Aug 14, 2026", time: "14:00 UTC", desc: "Performance Marketing Ads Growth", merchant: "Google Ads Growth", category: "Marketing & Ads", account: "Apex Black Corporate Card", amount: -620.80, type: "expense", status: "Completed", icon: "Target", authCode: "AUTH-88430" }
+    ];
+
+    const SPENDING_CATEGORIES = [
+      { name: "Cloud & Tech", amount: 3250.40, percentage: 35.6, color: "#3B82F6", icon: "Server", budget: 3500 },
+      { name: "Software & SaaS", amount: 2180.00, percentage: 23.9, color: "#10B981", icon: "Layers", budget: 2500 },
+      { name: "Contractors & Payroll", amount: 1850.00, percentage: 20.2, color: "#8B5CF6", icon: "Users", budget: 2000 },
+      { name: "Marketing & Ads", amount: 1120.80, percentage: 12.3, color: "#F59E0B", icon: "TrendingUp", budget: 1500 },
+      { name: "Travel & Dining", amount: 739.00, percentage: 8.0, color: "#EC4899", icon: "Plane", budget: 1000 }
+    ];
+
+    const INITIAL_HOLDINGS = [
+      { symbol: "NVDA", name: "NVIDIA Corp", shares: 185, avg: 112.40, price: 128.50, value: 23772.50, pnl: 2978.50, pnlPct: 14.32, type: "Equity" },
+      { symbol: "MSFT", name: "Microsoft Corp", shares: 120, avg: 410.00, price: 448.20, value: 53784.00, pnl: 4584.00, pnlPct: 9.32, type: "Equity" },
+      { symbol: "VOO", name: "Vanguard S&P 500 ETF", shares: 180, avg: 480.00, price: 512.40, value: 92232.00, pnl: 5832.00, pnlPct: 6.75, type: "ETF" },
+      { symbol: "BTC", name: "Bitcoin (Cold Storage)", shares: 0.65, avg: 58200.00, price: 64150.00, value: 41697.50, pnl: 3867.50, pnlPct: 10.22, type: "Crypto" },
+      { symbol: "US-TBILL", name: "US 3-Mo Treasury (5.25%)", shares: 125, avg: 1000.00, price: 1013.12, value: 126640.00, pnl: 1640.00, pnlPct: 1.31, type: "Bond" },
+      { symbol: "ETH", name: "Ethereum (Staked)", shares: 3.2, avg: 3100.00, price: 3009.20, value: 9629.50, pnl: -290.50, pnlPct: -2.93, type: "Crypto" }
+    ];
+
+    const CASHFLOW_PERIODS = {
+      "7D": {
+        labels: ["Thu 20", "Fri 21", "Sat 22", "Sun 23", "Mon 24", "Tue 25", "Wed 26"],
+        income: [3200, 1400, 4800, 950, 8200, 2800, 12500],
+        expenses: [850, 1200, 620, 450, 1400, 1840, 620]
+      },
+      "30D": {
+        labels: ["Aug W1", "Aug W2", "Aug W3", "Aug W4"],
+        income: [6800, 7900, 6100, 7650],
+        expenses: [2400, 1950, 2650, 2140]
+      },
+      "90D": {
+        labels: ["June 2026", "July 2026", "August 2026"],
+        income: [24500, 26245, 28450],
+        expenses: [10500, 9445, 9140]
+      },
+      "1Y": {
+        labels: ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+        income: [18200, 19500, 21400, 25800, 20100, 22000, 23500, 24200, 25100, 24500, 26245, 28450],
+        expenses: [8900, 9200, 8700, 12400, 8400, 8600, 9100, 9800, 8950, 10500, 9445, 9140]
+      }
+    };
+
+    const RECURRING_BILLS = [
+      { id: "rec-1", name: "AWS Cloud Infrastructure Cluster", vendor: "Amazon Web Services", amount: 1840.50, due: "Sep 01, 2026", category: "Cloud", autoPay: true },
+      { id: "rec-2", name: "OpenAI Compute API", vendor: "OpenAI LLC", amount: 620.00, due: "Sep 01, 2026", category: "AI & ML", autoPay: true },
+      { id: "rec-3", name: "GitHub Enterprise (25 seats)", vendor: "GitHub Inc", amount: 340.00, due: "Sep 05, 2026", category: "DevTools", autoPay: true },
+      { id: "rec-4", name: "Slack Business+ Communication", vendor: "Slack Tech", amount: 250.00, due: "Sep 12, 2026", category: "Comms", autoPay: true }
+    ];
+
+    // Format currency helper
+    function formatMoney(amount, curr = 'USD') {
+      const { symbol, rate } = CURRENCIES[curr] || CURRENCIES.USD;
+      const converted = amount * rate;
+      const absVal = Math.abs(converted);
+      const isNegative = converted < 0;
+      
+      const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(absVal);
+      
+      return `${isNegative ? '-' : ''}${symbol}${formatted}`;
+    }
+
+    // --- MAIN REACT APPLICATION ---
+    function FinanceDashboardApp() {
+      // Navigation & Layout
+      const [currentView, setCurrentView] = useState('dashboard'); // dashboard | transactions | analytics | investments | cards | settings
+      const [currency, setCurrency] = useState('USD');
+      const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+      const [selectedAccount, setSelectedAccount] = useState('all');
+      const [timeRange, setTimeRange] = useState('7D');
+      const [chartType, setChartType] = useState('area');
+      const [liveTickerActive, setLiveTickerActive] = useState(true);
+
+      // Financial Data
+      const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
+      const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
+      const [holdings, setHoldings] = useState(INITIAL_HOLDINGS);
+
+      // Virtual Cards State
+      const [cards, setCards] = useState([
+        { id: "c-1", name: "Apex Black Charge Card", pan: "4829 •••• •••• 7712", exp: "08/29", cvv: "492", type: "Corporate Physical", isFrozen: false, limit: 50000, spent: 3240.10, holder: "ALEXANDER VANCE" },
+        { id: "c-2", name: "Cloud & AI Virtual Float", pan: "4111 •••• •••• 9301", exp: "12/28", cvv: "810", type: "Virtual SaaS", isFrozen: false, limit: 10000, spent: 2745.90, holder: "APEX DEV OPS" }
+      ]);
+      const [showCardNumber, setShowCardNumber] = useState(false);
+
+      // Modals State
+      const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+      const [isAddTxnModalOpen, setIsAddTxnModalOpen] = useState(false);
+      const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+      const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+      const [selectedTxnForModal, setSelectedTxnForModal] = useState(null);
+      const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+      const [toastMessage, setToastMessage] = useState(null);
+
+      // Notifications
+      const [notifications, setNotifications] = useState([
+        { id: 1, title: "Inbound Wire Confirmed", desc: "$12,500.00 received from Helix Corp settled in Primary Operating.", time: "8m ago", unread: true, type: "success" },
+        { id: 2, title: "Treasury Yield Credited", desc: "$104.16 monthly cash yield added to Treasury Vault.", time: "2h ago", unread: true, type: "info" },
+        { id: 3, title: "AWS Envelope Threshold Alert", desc: "Cloud spend reached 85% of projected monthly envelope.", time: "1d ago", unread: false, type: "warning" },
+        { id: 4, title: "Security Login Verification", desc: "Authorized token generated for automated reconciliation.", time: "2d ago", unread: false, type: "neutral" }
+      ]);
+
+      const showToast = (msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 3500);
+      };
+
+      // Keyboard Shortcut listener (Ctrl+K or Cmd+K)
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            setIsCommandPaletteOpen(prev => !prev);
+          }
+          if (e.key === 'Escape') {
+            setIsCommandPaletteOpen(false);
+            setIsTransferModalOpen(false);
+            setIsAddTxnModalOpen(false);
+            setIsTradeModalOpen(false);
+            setSelectedTxnForModal(null);
+            setIsNotificationsOpen(false);
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, []);
+
+      // Lucide Icons Refresh
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      // Simulated Real-Time Price Micro-Ticks
+      useEffect(() => {
+        if (!liveTickerActive) return;
+        const interval = setInterval(() => {
+          setHoldings(prev => prev.map(h => {
+            if (h.type === 'Bond') return h;
+            const deltaPct = (Math.random() - 0.48) * 0.4; // subtle change
+            const newPrice = +(h.price * (1 + deltaPct / 100)).toFixed(2);
+            const newValue = +(h.shares * newPrice).toFixed(2);
+            const newPnl = +(newValue - (h.shares * h.avg)).toFixed(2);
+            const newPnlPct = +((newPnl / (h.shares * h.avg)) * 100).toFixed(2);
+            return {
+              ...h,
+              price: newPrice,
+              value: newValue,
+              pnl: newPnl,
+              pnlPct: newPnlPct
+            };
+          }));
+        }, 5000);
+        return () => clearInterval(interval);
+      }, [liveTickerActive]);
+
+      // Computed KPIs
+      const totalBalance = useMemo(() => {
+        return accounts.reduce((acc, curr) => acc + curr.balance, 0);
+      }, [accounts]);
+
+      const monthlyIncome = useMemo(() => {
+        return transactions
+          .filter(t => t.type === 'income' && t.status === 'Completed')
+          .reduce((sum, t) => sum + t.amount, 0);
+      }, [transactions]);
+
+      const monthlyExpenses = useMemo(() => {
+        return transactions
+          .filter(t => t.type === 'expense' && t.status === 'Completed')
+          .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      }, [transactions]);
+
+      const netSavings = monthlyIncome - monthlyExpenses;
+      const savingsRate = monthlyIncome > 0 ? ((netSavings / monthlyIncome) * 100).toFixed(1) : 0;
+
+      // Handle Add Transaction
+      const handleAddTransaction = (newTxn) => {
+        setTransactions([newTxn, ...transactions]);
+        setAccounts(prev => prev.map(acc => {
+          if (acc.name === newTxn.account) {
+            return { ...acc, balance: acc.balance + newTxn.amount };
+          }
+          return acc;
+        }));
+        showToast(`Transaction "${newTxn.desc}" recorded successfully!`);
+        setIsAddTxnModalOpen(false);
+      };
+
+      // Handle Transfer
+      const handleTransfer = ({ fromId, toId, amount, note }) => {
+        const amt = parseFloat(amount);
+        if (!amt || amt <= 0) return;
+
+        setAccounts(prev => prev.map(acc => {
+          if (acc.id === fromId) return { ...acc, balance: acc.balance - amt };
+          if (acc.id === toId) return { ...acc, balance: acc.balance + amt };
+          return acc;
+        }));
+
+        const fromAcc = accounts.find(a => a.id === fromId);
+        const toAcc = accounts.find(a => a.id === toId);
+
+        const newTxn = {
+          id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
+          date: "Aug 26, 2026",
+          time: "Just now",
+          desc: `Internal Vault Transfer: ${fromAcc?.name} → ${toAcc?.name}`,
+          merchant: "Internal Liquidity Move",
+          category: "Transfer",
+          account: fromAcc?.name || "Primary Operating",
+          amount: -amt,
+          type: "expense",
+          status: "Completed",
+          icon: "ArrowRightLeft",
+          authCode: `AUTH-${Math.floor(10000 + Math.random() * 90000)}`
+        };
+
+        setTransactions([newTxn, ...transactions]);
+        showToast(`Successfully transferred ${formatMoney(amt, currency)} to ${toAcc?.name}!`);
+        setIsTransferModalOpen(false);
+      };
+
+      // Handle Trade Order Execution
+      const handleTrade = ({ symbol, action, shares, price, total }) => {
+        const cost = parseFloat(total);
+        if (action === 'BUY') {
+          // Deduct cash from operating
+          setAccounts(prev => prev.map(a => a.id === 'acc-1' ? { ...a, balance: a.balance - cost } : a));
+          // Add shares
+          setHoldings(prev => {
+            const exists = prev.find(h => h.symbol === symbol);
+            if (exists) {
+              const newShares = exists.shares + parseFloat(shares);
+              const newAvg = +(((exists.shares * exists.avg) + cost) / newShares).toFixed(2);
+              const newValue = +(newShares * exists.price).toFixed(2);
+              const newPnl = +(newValue - (newShares * newAvg)).toFixed(2);
+              const newPnlPct = +((newPnl / (newShares * newAvg)) * 100).toFixed(2);
+              return prev.map(h => h.symbol === symbol ? { ...h, shares: newShares, avg: newAvg, value: newValue, pnl: newPnl, pnlPct: newPnlPct } : h);
+            }
+            return prev;
+          });
+          showToast(`Executed BUY ${shares} ${symbol} for ${formatMoney(cost, currency)}!`);
+        } else {
+          // SELL
+          setAccounts(prev => prev.map(a => a.id === 'acc-1' ? { ...a, balance: a.balance + cost } : a));
+          setHoldings(prev => prev.map(h => {
+            if (h.symbol === symbol) {
+              const newShares = Math.max(0, h.shares - parseFloat(shares));
+              const newValue = +(newShares * h.price).toFixed(2);
+              const newPnl = +(newValue - (newShares * h.avg)).toFixed(2);
+              const newPnlPct = newShares > 0 ? +((newPnl / (newShares * h.avg)) * 100).toFixed(2) : 0;
+              return { ...h, shares: newShares, value: newValue, pnl: newPnl, pnlPct: newPnlPct };
+            }
+            return h;
+          }));
+          showToast(`Executed SELL ${shares} ${symbol} for ${formatMoney(cost, currency)}!`);
+        }
+        setIsTradeModalOpen(false);
+      };
+
+      // Toggle Card Freeze
+      const handleToggleFreezeCard = (cardId) => {
+        setCards(prev => prev.map(c => {
+          if (c.id === cardId) {
+            const nextState = !c.isFrozen;
+            showToast(`${c.name} ${nextState ? 'Frozen / Locked' : 'Active & Unfrozen'}`);
+            return { ...c, isFrozen: nextState };
+          }
+          return c;
+        }));
+      };
+
+      // Export CSV
+      const handleExportCSV = () => {
+        const headers = ["Transaction ID", "Date", "Description", "Merchant", "Category", "Account", "Amount", "Type", "Status", "Auth Code"];
+        const rows = transactions.map(t => [
+          t.id,
+          t.date,
+          `"${t.desc.replace(/"/g, '""')}"`,
+          `"${t.merchant.replace(/"/g, '""')}"`,
+          t.category,
+          `"${t.account}"`,
+          t.amount,
+          t.type,
+          t.status,
+          t.authCode || 'N/A'
+        ]);
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Apex_Treasury_Ledger_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("CSV ledger export generated and downloaded!");
+      };
+
+      const unreadCount = notifications.filter(n => n.unread).length;
+
+      return (
+        <div className="flex h-screen w-screen overflow-hidden bg-[#0B0F14] text-slate-100 bg-mesh-glow">
+          {/* TOAST FEEDBACK */}
+          {toastMessage && (
+            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#11161F]/95 border border-emerald-500/30 text-slate-100 px-4 py-3 rounded-xl shadow-2xl shadow-black/80 backdrop-blur-md animate-fade-in border-l-4 border-l-emerald-500">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                <i data-lucide="check" className="w-4 h-4"></i>
+              </span>
+              <p className="text-sm font-medium">{toastMessage}</p>
+            </div>
+          )}
+
+          {/* SIDEBAR NAVIGATION */}
+          <aside className={`
+            fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[#1E2633] bg-[#0E131A]/95 backdrop-blur-xl transition-all duration-300 ease-in-out
+            lg:static lg:translate-x-0
+            ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            ${sidebarCollapsed ? 'w-20' : 'w-64'}
+          `}>
+            {/* Header Brand */}
+            <div className="flex h-16 items-center justify-between px-5 border-b border-[#1E2633]/80">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-md shadow-emerald-900/30 text-slate-950 font-extrabold text-lg tracking-tighter">
+                  ▲
+                </div>
+                {!sidebarCollapsed && (
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-base tracking-tight text-white font-sans">APEX</span>
+                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                        Fintech
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium tracking-tight">Institutional Treasury</span>
+                  </div>
+                )}
+              </div>
+
+              <button 
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md border border-[#1E2633] text-slate-400 hover:text-white hover:bg-[#161D29] transition-colors"
+                title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              >
+                <i data-lucide={sidebarCollapsed ? "chevron-right" : "chevron-left"} className="w-4 h-4"></i>
+              </button>
+
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="lg:hidden h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-[#161D29]"
+              >
+                <i data-lucide="x" className="w-5 h-5"></i>
+              </button>
+            </div>
+
+            {/* Navigation Menu Links */}
+            <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+              <div>
+                {!sidebarCollapsed && (
+                  <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+                    Workspace
+                  </p>
+                )}
+                <nav className="space-y-1">
+                  <SidebarNavItem 
+                    icon="layout-dashboard" 
+                    label="Dashboard" 
+                    active={currentView === 'dashboard'} 
+                    collapsed={sidebarCollapsed} 
+                    onClick={() => { setCurrentView('dashboard'); setMobileMenuOpen(false); }} 
+                  />
+                  <SidebarNavItem 
+                    icon="arrow-left-right" 
+                    label="Transactions" 
+                    badge={transactions.length}
+                    active={currentView === 'transactions'} 
+                    collapsed={sidebarCollapsed} 
+                    onClick={() => { setCurrentView('transactions'); setMobileMenuOpen(false); }} 
+                  />
+                  <SidebarNavItem 
+                    icon="credit-card" 
+                    label="Corporate Cards" 
+                    badge="2 Active"
+                    badgeColor="blue"
+                    active={currentView === 'cards'} 
+                    collapsed={sidebarCollapsed} 
+                    onClick={() => { setCurrentView('cards'); setMobileMenuOpen(false); }} 
+                  />
+                  <SidebarNavItem 
+                    icon="bar-chart-3" 
+                    label="Analytics" 
+                    active={currentView === 'analytics'} 
+                    collapsed={sidebarCollapsed} 
+                    onClick={() => { setCurrentView('analytics'); setMobileMenuOpen(false); }} 
+                  />
+                  <SidebarNavItem 
+                    icon="pie-chart" 
+                    label="Investments" 
+                    badge="+5.7%"
+                    badgeColor="emerald"
+                    active={currentView === 'investments'} 
+                    collapsed={sidebarCollapsed} 
+                    onClick={() => { setCurrentView('investments'); setMobileMenuOpen(false); }} 
+                  />
+                  <SidebarNavItem 
+                    icon="settings" 
+                    label="Settings" 
+                    active={currentView === 'settings'} 
+                    collapsed={sidebarCollapsed} 
+                    onClick={() => { setCurrentView('settings'); setMobileMenuOpen(false); }} 
+                  />
+                </nav>
+              </div>
+
+              {/* Quick Treasury Accounts Glance */}
+              {!sidebarCollapsed && (
+                <div className="pt-2 border-t border-[#1E2633]/60">
+                  <div className="flex items-center justify-between px-3 mb-2.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
+                      Vault Accounts
+                    </p>
+                    <span className="text-[11px] text-emerald-400 font-mono font-medium">4 Active</span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {accounts.map(acc => (
+                      <div 
+                        key={acc.id} 
+                        onClick={() => setSelectedAccount(selectedAccount === acc.id ? 'all' : acc.id)}
+                        className={`group flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer ${
+                          selectedAccount === acc.id 
+                            ? 'bg-[#18202C] border-emerald-500/40 shadow-sm' 
+                            : 'bg-[#11161F]/60 border-transparent hover:border-[#1E2633] hover:bg-[#161D29]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: acc.color }}></span>
+                          <div className="truncate">
+                            <p className="text-xs font-medium text-slate-200 truncate group-hover:text-white">{acc.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">{acc.number}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-mono font-semibold text-slate-300 tabular-nums">
+                          {formatMoney(acc.balance, currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Profile Footer */}
+            <div className="p-3 border-t border-[#1E2633]/80 bg-[#0B0F14]/60">
+              <div 
+                className="flex items-center gap-3 p-2 rounded-xl bg-[#11161F] border border-[#1E2633] hover:border-slate-700 transition-colors cursor-pointer"
+                onClick={() => setCurrentView('settings')}
+              >
+                <div className="relative flex-shrink-0">
+                  <div className="h-9 w-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-emerald-400">
+                    AV
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#11161F]"></span>
+                </div>
+                {!sidebarCollapsed && (
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-xs font-semibold text-white truncate">Alexander Vance</span>
+                    <span className="text-[10px] text-slate-400 truncate">VP Engineering / Apex</span>
+                  </div>
+                )}
+                {!sidebarCollapsed && (
+                  <i data-lucide="chevron-up" className="w-4 h-4 text-slate-400"></i>
+                )}
+              </div>
+            </div>
+          </aside>
+
+          {/* MAIN VIEW CONTENT CONTAINER */}
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* TOP HEADER BAR */}
+            <header className="h-16 border-b border-[#1E2633] bg-[#0E131A]/80 backdrop-blur-md px-4 lg:px-8 flex items-center justify-between gap-4 z-30">
+              <div className="flex items-center gap-3 min-w-0">
+                <button 
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="lg:hidden h-9 w-9 flex items-center justify-center rounded-lg border border-[#1E2633] text-slate-300 hover:text-white hover:bg-[#161D29]"
+                >
+                  <i data-lucide="menu" className="w-5 h-5"></i>
+                </button>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-slate-400 font-medium hidden sm:inline">Workspace</span>
+                  <span className="text-slate-500 hidden sm:inline">/</span>
+                  <span className="text-white font-semibold capitalize flex items-center gap-2">
+                    {currentView}
+                    {selectedAccount !== 'all' && (
+                      <span className="text-xs font-normal text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                        Filter: {accounts.find(a => a.id === selectedAccount)?.name}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons & Currency & Search */}
+              <div className="flex items-center gap-3">
+                {/* Live Simulated Market Feed Toggle */}
+                <button
+                  onClick={() => {
+                    setLiveTickerActive(!liveTickerActive);
+                    showToast(liveTickerActive ? "Market simulator paused" : "Live institutional data feed active");
+                  }}
+                  className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono border transition-all ${
+                    liveTickerActive
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : 'bg-[#11161F] text-slate-400 border-[#1E2633]'
+                  }`}
+                  title="Simulated Real-Time Tick Streaming"
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${liveTickerActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
+                  <span>{liveTickerActive ? 'Feed: LIVE' : 'Feed: STATIC'}</span>
+                </button>
+
+                {/* Command Palette Trigger */}
+                <button
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  className="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-lg bg-[#11161F] border border-[#1E2633] text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-all text-xs w-56 lg:w-64 justify-between shadow-inner"
+                >
+                  <div className="flex items-center gap-2">
+                    <i data-lucide="search" className="w-3.5 h-3.5 text-slate-400"></i>
+                    <span>Quick command...</span>
+                  </div>
+                  <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#1E2633] text-slate-300 rounded border border-slate-700">
+                    ⌘K
+                  </kbd>
+                </button>
+
+                {/* Global Currency Switcher */}
+                <div className="relative">
+                  <select
+                    value={currency}
+                    onChange={(e) => {
+                      setCurrency(e.target.value);
+                      showToast(`Base display currency changed to ${e.target.value}`);
+                    }}
+                    className="bg-[#11161F] border border-[#1E2633] text-xs text-slate-200 font-mono font-medium rounded-lg px-2.5 py-1.5 hover:border-slate-600 focus:outline-none focus:border-emerald-500 cursor-pointer appearance-none pr-7"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="SGD">SGD (S$)</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
+                    <i data-lucide="chevron-down" className="w-3 h-3"></i>
+                  </div>
+                </div>
+
+                {/* Transfer Funds Button */}
+                <button
+                  onClick={() => setIsTransferModalOpen(true)}
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] text-xs font-semibold text-slate-200 hover:text-white transition-all shadow-sm"
+                >
+                  <i data-lucide="arrow-right-left" className="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Transfer</span>
+                </button>
+
+                {/* New Record Button */}
+                <button
+                  onClick={() => setIsAddTxnModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-all shadow-md shadow-emerald-950/40"
+                >
+                  <i data-lucide="plus" className="w-3.5 h-3.5 stroke-[2.5]"></i>
+                  <span className="hidden sm:inline">Add Entry</span>
+                </button>
+
+                {/* Notifications Bell */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                    className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-[#1E2633] bg-[#11161F] text-slate-300 hover:text-white hover:border-slate-600 transition-colors"
+                  >
+                    <i data-lucide="bell" className="w-4 h-4"></i>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-slate-950">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {isNotificationsOpen && (
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-[#11161F] border border-[#1E2633] shadow-modal z-50 p-4 animate-fade-in">
+                      <div className="flex items-center justify-between pb-3 border-b border-[#1E2633]">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-white uppercase tracking-wider">Notifications</h4>
+                          <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
+                            {unreadCount} unread
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+                            showToast("All notifications marked as read");
+                          }}
+                          className="text-[11px] text-slate-400 hover:text-emerald-400 transition-colors"
+                        >
+                          Mark all read
+                        </button>
+                      </div>
+                      <div className="divide-y divide-[#1E2633]/60 max-h-72 overflow-y-auto mt-2">
+                        {notifications.map(n => (
+                          <div key={n.id} className={`py-2.5 px-1 flex gap-3 ${n.unread ? 'bg-emerald-500/5' : ''}`}>
+                            <div className={`mt-0.5 h-2 w-2 rounded-full flex-shrink-0 ${n.unread ? 'bg-emerald-400' : 'bg-slate-600'}`}></div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-slate-200">{n.title}</p>
+                              <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{n.desc}</p>
+                              <span className="text-[10px] text-slate-400 font-mono">{n.time}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </header>
+
+            {/* ROUTED CONTENT PAGES */}
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+              {currentView === 'dashboard' && (
+                <DashboardOverviewView
+                  totalBalance={totalBalance}
+                  monthlyIncome={monthlyIncome}
+                  monthlyExpenses={monthlyExpenses}
+                  netSavings={netSavings}
+                  savingsRate={savingsRate}
+                  currency={currency}
+                  timeRange={timeRange}
+                  setTimeRange={setTimeRange}
+                  chartType={chartType}
+                  setChartType={setChartType}
+                  transactions={transactions}
+                  onSelectTransaction={(txn) => setSelectedTxnForModal(txn)}
+                  onAddTxnClick={() => setIsAddTxnModalOpen(true)}
+                  onTransferClick={() => setIsTransferModalOpen(true)}
+                  accounts={accounts}
+                  selectedAccount={selectedAccount}
+                  setSelectedAccount={setSelectedAccount}
+                  onExportCSV={handleExportCSV}
+                />
+              )}
+
+              {currentView === 'transactions' && (
+                <TransactionsFullView
+                  transactions={transactions}
+                  currency={currency}
+                  onSelectTransaction={(txn) => setSelectedTxnForModal(txn)}
+                  onAddTxnClick={() => setIsAddTxnModalOpen(true)}
+                  onExportCSV={handleExportCSV}
+                />
+              )}
+
+              {currentView === 'cards' && (
+                <CorporateCardsView
+                  cards={cards}
+                  currency={currency}
+                  showCardNumber={showCardNumber}
+                  setShowCardNumber={setShowCardNumber}
+                  onToggleFreeze={handleToggleFreezeCard}
+                  showToast={showToast}
+                />
+              )}
+
+              {currentView === 'analytics' && (
+                <AnalyticsFullView
+                  currency={currency}
+                  monthlyIncome={monthlyIncome}
+                  monthlyExpenses={monthlyExpenses}
+                  netSavings={netSavings}
+                  savingsRate={savingsRate}
+                  transactions={transactions}
+                />
+              )}
+
+              {currentView === 'investments' && (
+                <InvestmentsFullView
+                  holdings={holdings}
+                  currency={currency}
+                  onOpenTradeModal={() => setIsTradeModalOpen(true)}
+                  showToast={showToast}
+                />
+              )}
+
+              {currentView === 'settings' && (
+                <SettingsFullView
+                  currency={currency}
+                  setCurrency={setCurrency}
+                  showToast={showToast}
+                />
+              )}
+            </main>
+          </div>
+
+          {/* ALL MODALS */}
+          {isTransferModalOpen && (
+            <TransferModal
+              accounts={accounts}
+              currency={currency}
+              onClose={() => setIsTransferModalOpen(false)}
+              onTransfer={handleTransfer}
+            />
+          )}
+
+          {isAddTxnModalOpen && (
+            <AddTransactionModal
+              accounts={accounts}
+              currency={currency}
+              onClose={() => setIsAddTxnModalOpen(false)}
+              onAdd={handleAddTransaction}
+            />
+          )}
+
+          {isTradeModalOpen && (
+            <TradeOrderModal
+              holdings={holdings}
+              accounts={accounts}
+              currency={currency}
+              onClose={() => setIsTradeModalOpen(false)}
+              onTrade={handleTrade}
+            />
+          )}
+
+          {selectedTxnForModal && (
+            <TransactionDetailModal
+              txn={selectedTxnForModal}
+              currency={currency}
+              onClose={() => setSelectedTxnForModal(null)}
+              showToast={showToast}
+            />
+          )}
+
+          {isCommandPaletteOpen && (
+            <CommandPaletteModal
+              onClose={() => setIsCommandPaletteOpen(false)}
+              onNavigate={(view) => { setCurrentView(view); setIsCommandPaletteOpen(false); }}
+              onAction={(action) => {
+                setIsCommandPaletteOpen(false);
+                if (action === 'transfer') setIsTransferModalOpen(true);
+                if (action === 'add-txn') setIsAddTxnModalOpen(true);
+                if (action === 'trade') setIsTradeModalOpen(true);
+                if (action === 'export-csv') handleExportCSV();
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // --- SIDEBAR NAV ITEM ---
+    function SidebarNavItem({ icon, label, badge, badgeColor = "slate", active, collapsed, onClick }) {
+      return (
+        <button
+          onClick={onClick}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+            active 
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm' 
+              : 'text-slate-400 hover:text-slate-100 hover:bg-[#161D29] border border-transparent'
+          }`}
+          title={collapsed ? label : undefined}
+        >
+          <div className={`${active ? 'text-emerald-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
+            <i data-lucide={icon} className="w-4 h-4"></i>
+          </div>
+          {!collapsed && (
+            <span className="flex-1 text-left tracking-tight truncate">{label}</span>
+          )}
+          {!collapsed && badge && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+              badgeColor === 'emerald' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+              badgeColor === 'blue' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+              'bg-slate-800 text-slate-300 border border-slate-700'
+            }`}>
+              {badge}
+            </span>
+          )}
+        </button>
+      );
+    }
+
+    // --- DASHBOARD OVERVIEW VIEW ---
+    function DashboardOverviewView({
+      totalBalance,
+      monthlyIncome,
+      monthlyExpenses,
+      netSavings,
+      savingsRate,
+      currency,
+      timeRange,
+      setTimeRange,
+      chartType,
+      setChartType,
+      transactions,
+      onSelectTransaction,
+      onAddTxnClick,
+      onTransferClick,
+      accounts,
+      selectedAccount,
+      setSelectedAccount,
+      onExportCSV
+    }) {
+      const [tableSearch, setTableSearch] = useState('');
+      const [categoryFilter, setCategoryFilter] = useState('All');
+
+      const filteredTransactions = useMemo(() => {
+        return transactions.filter(t => {
+          const matchSearch = t.desc.toLowerCase().includes(tableSearch.toLowerCase()) ||
+                              t.merchant.toLowerCase().includes(tableSearch.toLowerCase()) ||
+                              t.id.toLowerCase().includes(tableSearch.toLowerCase());
+          const matchCategory = categoryFilter === 'All' || t.category === categoryFilter;
+          const matchAccount = selectedAccount === 'all' || accounts.find(a => a.id === selectedAccount)?.name === t.account;
+          return matchSearch && matchCategory && matchAccount;
+        });
+      }, [transactions, tableSearch, categoryFilter, selectedAccount, accounts]);
+
+      return (
+        <div className="space-y-6">
+          {/* HEADER BANNER */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#11161F]/70 border border-[#1E2633] p-4 sm:p-5 rounded-2xl backdrop-blur-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Financial Treasury Overview</h1>
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Real-time multi-entity cash flow, burn rate monitoring, and automated ledger settlements.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-1.5 bg-[#0B0F14] border border-[#1E2633] rounded-lg p-1 text-xs">
+                <button
+                  onClick={() => setSelectedAccount('all')}
+                  className={`px-2.5 py-1 rounded-md transition-all font-medium ${selectedAccount === 'all' ? 'bg-[#1E2633] text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  All Accounts
+                </button>
+                {accounts.map(acc => (
+                  <button
+                    key={acc.id}
+                    onClick={() => setSelectedAccount(acc.id)}
+                    className={`px-2.5 py-1 rounded-md transition-all font-medium ${selectedAccount === acc.id ? 'bg-[#1E2633] text-emerald-400' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    {acc.badge || acc.name.split(' ')[0]}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={onExportCSV}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] rounded-lg text-xs font-semibold text-slate-200 transition-colors"
+              >
+                <i data-lucide="download" className="w-3.5 h-3.5"></i>
+                <span>Report</span>
+              </button>
+            </div>
+          </div>
+
+          {/* KPI CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <KpiCard
+              title="Total Treasury Balance"
+              value={formatMoney(totalBalance, currency)}
+              change="+12.8%"
+              changeType="positive"
+              subtitle="vs last month (+$16.5k)"
+              icon="wallet"
+              sparkline={[122, 126, 124, 131, 138, 141, 145]}
+              sparklineColor="#10B981"
+            />
+            <KpiCard
+              title="Monthly Income / Inflow"
+              value={formatMoney(monthlyIncome, currency)}
+              change="+8.4%"
+              changeType="positive"
+              subtitle="Target: $25,000.00/mo"
+              icon="arrow-down-left"
+              sparkline={[21, 24, 22, 26, 25, 27, 28]}
+              sparklineColor="#10B981"
+            />
+            <KpiCard
+              title="Monthly Burn / Expenses"
+              value={formatMoney(monthlyExpenses, currency)}
+              change="-3.2%"
+              changeType="favorable"
+              subtitle="Envelope: $12,000.00 max"
+              icon="arrow-up-right"
+              sparkline={[11, 10.5, 9.8, 10.1, 9.6, 9.4, 9.1]}
+              sparklineColor="#F43F5E"
+            />
+            <KpiCard
+              title="Net Retained Capital"
+              value={formatMoney(netSavings, currency)}
+              change={`${savingsRate}%`}
+              changeType="positive"
+              subtitle="Healthy corporate runway"
+              icon="piggy-bank"
+              sparkline={[9.8, 14, 13, 15.9, 15.8, 17.6, 19.3]}
+              sparklineColor="#3B82F6"
+            />
+          </div>
+
+          {/* CHARTS ROW */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1E2633]/60">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-white">Cash Inflow vs. Operating Outflow</h3>
+                    <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Surplus: +{formatMoney(netSavings, currency)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">Historical revenue streams versus vendor and payroll expenditures.</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-[#0B0F14] p-1 rounded-lg border border-[#1E2633]">
+                    <button
+                      onClick={() => setChartType('area')}
+                      className={`p-1.5 rounded-md text-xs transition-colors ${chartType === 'area' ? 'bg-[#1E2633] text-emerald-400' : 'text-slate-400 hover:text-slate-200'}`}
+                      title="Area Trend Curve"
+                    >
+                      <i data-lucide="line-chart" className="w-3.5 h-3.5"></i>
+                    </button>
+                    <button
+                      onClick={() => setChartType('bar')}
+                      className={`p-1.5 rounded-md text-xs transition-colors ${chartType === 'bar' ? 'bg-[#1E2633] text-emerald-400' : 'text-slate-400 hover:text-slate-200'}`}
+                      title="Bar Comparison"
+                    >
+                      <i data-lucide="bar-chart-2" className="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center bg-[#0B0F14] p-1 rounded-lg border border-[#1E2633] text-xs font-mono font-medium">
+                    {["7D", "30D", "90D", "1Y"].map(period => (
+                      <button
+                        key={period}
+                        onClick={() => setTimeRange(period)}
+                        className={`px-2.5 py-1 rounded-md transition-all ${
+                          timeRange === period 
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold' 
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        {period}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="my-4 h-72 w-full relative">
+                <InteractiveIncomeExpenseChart
+                  period={timeRange}
+                  type={chartType}
+                  currency={currency}
+                />
+              </div>
+
+              <div className="pt-4 border-t border-[#1E2633]/60 grid grid-cols-3 gap-3 text-center sm:text-left">
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                  <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></div>
+                  <div>
+                    <p className="text-[10px] uppercase font-mono text-slate-400">Total Inflow ({timeRange})</p>
+                    <p className="text-xs sm:text-sm font-mono font-bold text-slate-100">{formatMoney(monthlyIncome, currency)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                  <div className="h-3 w-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></div>
+                  <div>
+                    <p className="text-[10px] uppercase font-mono text-slate-400">Total Outflow ({timeRange})</p>
+                    <p className="text-xs sm:text-sm font-mono font-bold text-slate-100">{formatMoney(monthlyExpenses, currency)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                  <div className="h-3 w-3 rounded-full bg-blue-400"></div>
+                  <div>
+                    <p className="text-[10px] uppercase font-mono text-slate-400">Net Retained</p>
+                    <p className="text-xs sm:text-sm font-mono font-bold text-emerald-400">+{formatMoney(netSavings, currency)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expense Allocation Donut */}
+            <div className="glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
+              <div className="pb-4 border-b border-[#1E2633]/60 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white">Expense Allocation</h3>
+                  <p className="text-xs text-slate-400">Aug 2026 breakdown</p>
+                </div>
+                <span className="text-xs font-mono text-slate-400 font-semibold">{formatMoney(monthlyExpenses, currency)}</span>
+              </div>
+
+              <div className="my-3 h-52 relative flex items-center justify-center">
+                <SpendingDonutChart currency={currency} />
+              </div>
+
+              <div className="space-y-2.5 pt-3 border-t border-[#1E2633]/60">
+                {SPENDING_CATEGORIES.map(cat => (
+                  <div key={cat.name} className="group">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cat.color }}></span>
+                        <span className="text-slate-300 font-medium">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 font-mono">
+                        <span className="text-slate-400 text-[11px]">{cat.percentage}%</span>
+                        <span className="text-slate-200 font-semibold">{formatMoney(cat.amount, currency)}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${cat.percentage}%`, backgroundColor: cat.color }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* LOWER SECTION */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-6">
+              <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-[#1E2633]/60">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="shield" className="w-4 h-4 text-emerald-400"></i>
+                    Financial Health & Runway
+                  </h3>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Optimal
+                  </span>
+                </div>
+
+                <div className="bg-[#0E131A] p-3.5 rounded-xl border border-[#1E2633]/80 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Savings Target Rate</span>
+                    <span className="text-emerald-400 font-bold font-mono">{savingsRate}% / 60.0%</span>
+                  </div>
+                  <div className="h-2 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style={{ width: `${Math.min(savingsRate, 100)}%` }}></div>
+                  </div>
+                  <p className="text-[11px] text-slate-400">You are saving +7.8% above your corporate liquidity benchmark.</p>
+                </div>
+
+                <div className="bg-[#0E131A] p-3.5 rounded-xl border border-[#1E2633]/80 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Monthly Budget Cap</span>
+                    <span className="text-slate-200 font-mono font-semibold">{formatMoney(monthlyExpenses, currency)} / {formatMoney(12000, currency)}</span>
+                  </div>
+                  <div className="h-2 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: `${(monthlyExpenses / 12000) * 100}%` }}></div>
+                  </div>
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                    <span>Used: {((monthlyExpenses / 12000) * 100).toFixed(0)}%</span>
+                    <span>Remaining: {formatMoney(12000 - monthlyExpenses, currency)}</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 flex gap-2">
+                  <button
+                    onClick={onTransferClick}
+                    className="flex-1 py-2 rounded-xl bg-[#161D29] hover:bg-[#1E2633] border border-[#1E2633] text-xs font-semibold text-slate-200 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <i data-lucide="send" className="w-3.5 h-3.5 text-emerald-400"></i>
+                    Move Funds
+                  </button>
+                  <button
+                    onClick={onAddTxnClick}
+                    className="flex-1 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-xs font-semibold text-emerald-400 transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <i data-lucide="plus-circle" className="w-3.5 h-3.5"></i>
+                    Record Spend
+                  </button>
+                </div>
+              </div>
+
+              {/* Recurring Subscriptions */}
+              <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-[#1E2633]/60">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="refresh-cw" className="w-4 h-4 text-blue-400"></i>
+                    Upcoming Recurring
+                  </h3>
+                  <span className="text-[11px] font-mono text-slate-400">Next 14 Days</span>
+                </div>
+
+                <div className="space-y-2">
+                  {RECURRING_BILLS.map(bill => (
+                    <div key={bill.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#0E131A] border border-[#1E2633]/60">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-slate-200 truncate">{bill.name}</p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-0.5">
+                          <span>Due: {bill.due}</span>
+                          <span>•</span>
+                          <span className="text-emerald-400">Auto-Debit</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-slate-200">
+                        {formatMoney(bill.amount, currency)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Transactions Table */}
+            <div className="lg:col-span-2 glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1E2633]/60">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white">Recent Transactions</h3>
+                    <p className="text-xs text-slate-400">Audited settlement ledger and card authorizations.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="relative">
+                      <i data-lucide="search" className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                      <input
+                        type="text"
+                        placeholder="Search merchant, desc..."
+                        value={tableSearch}
+                        onChange={(e) => setTableSearch(e.target.value)}
+                        className="bg-[#0B0F14] border border-[#1E2633] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-44 sm:w-52"
+                      />
+                    </div>
+
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="bg-[#0B0F14] border border-[#1E2633] text-xs text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="All">All Categories</option>
+                      <option value="Income">Income Only</option>
+                      <option value="Cloud & Tech">Cloud & Tech</option>
+                      <option value="Software & SaaS">Software & SaaS</option>
+                      <option value="Contractors & Payroll">Contractors</option>
+                      <option value="Marketing & Ads">Marketing</option>
+                      <option value="Travel & Dining">Travel</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto mt-3">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-[#1E2633] text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                        <th className="py-3 px-3 font-semibold">Transaction & Merchant</th>
+                        <th className="py-3 px-3 font-semibold hidden md:table-cell">Account</th>
+                        <th className="py-3 px-3 font-semibold hidden sm:table-cell">Date</th>
+                        <th className="py-3 px-3 font-semibold">Status</th>
+                        <th className="py-3 px-3 font-semibold text-right">Amount</th>
+                        <th className="py-3 px-2 font-semibold text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#1E2633]/50 font-sans">
+                      {filteredTransactions.slice(0, 7).map(txn => {
+                        const isIncome = txn.type === 'income';
+                        return (
+                          <tr
+                            key={txn.id}
+                            onClick={() => onSelectTransaction(txn)}
+                            className="hover:bg-[#161D29]/80 transition-colors cursor-pointer group"
+                          >
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                  isIncome ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
+                                }`}>
+                                  <i data-lucide={txn.icon || (isIncome ? "arrow-down-left" : "credit-card")} className="w-4 h-4"></i>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-slate-200 group-hover:text-white truncate max-w-[180px] sm:max-w-[240px]">
+                                    {txn.desc}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-mono truncate">{txn.merchant}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 hidden md:table-cell text-slate-400 font-mono text-[11px] truncate max-w-[140px]">
+                              {txn.account}
+                            </td>
+                            <td className="py-3 px-3 hidden sm:table-cell text-slate-400 font-mono text-[11px]">
+                              {txn.date}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
+                                txn.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                txn.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              }`}>
+                                <span className={`h-1.5 w-1.5 rounded-full ${
+                                  txn.status === 'Completed' ? 'bg-emerald-400' :
+                                  txn.status === 'Pending' ? 'bg-amber-400' : 'bg-blue-400'
+                                }`}></span>
+                                {txn.status}
+                              </span>
+                            </td>
+                            <td className={`py-3 px-3 text-right font-mono font-bold tabular-nums ${
+                              isIncome ? 'text-emerald-400' : 'text-slate-200'
+                            }`}>
+                              {isIncome ? '+' : ''}{formatMoney(txn.amount, currency)}
+                            </td>
+                            <td className="py-3 px-2 text-right">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); onSelectTransaction(txn); }}
+                                className="p-1 rounded text-slate-500 hover:text-white hover:bg-[#1E2633] transition-colors"
+                              >
+                                <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#1E2633]/60 flex items-center justify-between text-xs text-slate-400">
+                <span>Showing top {Math.min(7, filteredTransactions.length)} of {transactions.length} entries</span>
+                <button
+                  onClick={onExportCSV}
+                  className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
+                >
+                  Download Complete CSV <i data-lucide="arrow-right" className="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- CORPORATE CARDS VIEW ---
+    function CorporateCardsView({ cards, currency, showCardNumber, setShowCardNumber, onToggleFreeze, showToast }) {
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+            <div>
+              <h2 className="text-xl font-bold text-white">Commercial Card Fleet</h2>
+              <p className="text-xs text-slate-400 mt-1">Multi-user physical & virtual corporate cards with configurable limit rules.</p>
+            </div>
+            <button
+              onClick={() => setShowCardNumber(!showCardNumber)}
+              className="flex items-center gap-2 px-3.5 py-1.5 bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] rounded-lg text-xs font-semibold text-slate-200 transition-colors"
+            >
+              <i data-lucide={showCardNumber ? "eye-off" : "eye"} className="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>{showCardNumber ? 'Hide Card Details' : 'Reveal Card Numbers'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {cards.map(card => (
+              <div key={card.id} className="space-y-4">
+                {/* Physical Card Visual */}
+                <div className={`credit-card-gradient rounded-2xl p-6 relative overflow-hidden transition-all duration-300 ${
+                  card.isFrozen ? 'opacity-50 grayscale' : 'hover:border-slate-500'
+                }`}>
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded bg-emerald-500 text-slate-950 font-bold flex items-center justify-center text-xs">
+                        ▲
+                      </div>
+                      <span className="font-bold text-sm text-white">APEX BLACK</span>
+                    </div>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 bg-[#0B0F14]/70 px-2 py-0.5 rounded border border-white/10">
+                      {card.type}
+                    </span>
+                  </div>
+
+                  <div className="my-6">
+                    <p className="font-mono text-lg tracking-widest text-slate-100 font-bold">
+                      {showCardNumber ? (card.id === 'c-1' ? '4829 9012 3456 7712' : '4111 8820 1923 9301') : card.pan}
+                    </p>
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-[9px] font-mono uppercase text-slate-400">Cardholder</p>
+                      <p className="text-xs font-semibold font-mono text-white">{card.holder}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-mono uppercase text-slate-400">Expires</p>
+                      <p className="text-xs font-mono text-slate-300">{card.exp}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-mono uppercase text-slate-400">CVV</p>
+                      <p className="text-xs font-mono text-slate-300">{showCardNumber ? card.cvv : '•••'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Controls */}
+                <div className="glass-card rounded-2xl p-4 border border-[#1E2633] space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-medium">Monthly Spending Limit</span>
+                    <span className="font-mono text-white font-bold">{formatMoney(card.spent, currency)} / {formatMoney(card.limit, currency)}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(card.spent / card.limit) * 100}%` }}></div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => onToggleFreeze(card.id)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${
+                        card.isFrozen
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20'
+                      }`}
+                    >
+                      <i data-lucide={card.isFrozen ? "unlock" : "lock"} className="w-3.5 h-3.5"></i>
+                      <span>{card.isFrozen ? 'Unfreeze Card' : 'Freeze Card'}</span>
+                    </button>
+                    <button
+                      onClick={() => showToast(`Limit adjusted for ${card.name}`)}
+                      className="px-3 py-2 rounded-xl bg-[#161D29] hover:bg-[#1E2633] border border-[#1E2633] text-xs font-semibold text-slate-200"
+                    >
+                      Edit Limit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- TRANSACTIONS FULL VIEW ---
+    function TransactionsFullView({ transactions, currency, onSelectTransaction, onAddTxnClick, onExportCSV }) {
+      const [filterType, setFilterType] = useState('all');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedCategory, setSelectedCategory] = useState('all');
+
+      const filteredList = useMemo(() => {
+        return transactions.filter(t => {
+          const matchSearch = t.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              t.merchant.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              t.id.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchType = filterType === 'all' || 
+                            (filterType === 'income' && t.type === 'income') ||
+                            (filterType === 'expense' && t.type === 'expense') ||
+                            (filterType === 'pending' && t.status === 'Pending');
+          const matchCat = selectedCategory === 'all' || t.category === selectedCategory;
+          return matchSearch && matchType && matchCat;
+        });
+      }, [transactions, searchQuery, filterType, selectedCategory]);
+
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+            <div>
+              <h2 className="text-xl font-bold text-white">Audited Transactions Ledger</h2>
+              <p className="text-xs text-slate-400 mt-1">Multi-currency bank authorizations, merchant wires, and categorized expenses.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onExportCSV}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] text-xs font-semibold text-slate-200 transition-colors"
+              >
+                <i data-lucide="download" className="w-3.5 h-3.5"></i>
+                <span>Export CSV</span>
+              </button>
+              <button
+                onClick={onAddTxnClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-semibold transition-colors"
+              >
+                <i data-lucide="plus" className="w-3.5 h-3.5"></i>
+                <span>Add Record</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl p-4 border border-[#1E2633] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-1 bg-[#0B0F14] p-1 rounded-xl border border-[#1E2633] text-xs font-medium">
+              {[
+                { key: 'all', label: 'All Transactions' },
+                { key: 'income', label: 'Inflows Only' },
+                { key: 'expense', label: 'Outflows Only' },
+                { key: 'pending', label: 'Pending Clear' }
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setFilterType(tab.key)}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    filterType === tab.key ? 'bg-[#1E2633] text-emerald-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="relative">
+                <i data-lucide="search" className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input
+                  type="text"
+                  placeholder="Filter by keyword..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-[#0B0F14] border border-[#1E2633] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 w-52"
+                />
+              </div>
+
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="bg-[#0B0F14] border border-[#1E2633] text-xs text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="all">All Categories</option>
+                <option value="Income">Income</option>
+                <option value="Cloud & Tech">Cloud & Tech</option>
+                <option value="Software & SaaS">Software & SaaS</option>
+                <option value="Contractors & Payroll">Contractors & Payroll</option>
+                <option value="Marketing & Ads">Marketing & Ads</option>
+                <option value="Travel & Dining">Travel & Dining</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl border border-[#1E2633] overflow-hidden shadow-card">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#0E131A] border-b border-[#1E2633] text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                  <tr>
+                    <th className="py-3.5 px-4 font-semibold">Reference ID</th>
+                    <th className="py-3.5 px-4 font-semibold">Description / Merchant</th>
+                    <th className="py-3.5 px-4 font-semibold">Category</th>
+                    <th className="py-3.5 px-4 font-semibold">Vault Account</th>
+                    <th className="py-3.5 px-4 font-semibold">Date & Time</th>
+                    <th className="py-3.5 px-4 font-semibold">Status</th>
+                    <th className="py-3.5 px-4 font-semibold text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1E2633]/60 font-sans">
+                  {filteredList.map(txn => {
+                    const isIncome = txn.type === 'income';
+                    return (
+                      <tr
+                        key={txn.id}
+                        onClick={() => onSelectTransaction(txn)}
+                        className="hover:bg-[#161D29] transition-colors cursor-pointer group"
+                      >
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400 group-hover:text-emerald-400">
+                          {txn.id}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="font-semibold text-slate-200 group-hover:text-white truncate max-w-xs">{txn.desc}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{txn.merchant}</p>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="px-2 py-0.5 rounded-full bg-[#18202C] border border-[#1E2633] text-[10px] text-slate-300 font-medium">
+                            {txn.category}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px]">
+                          {txn.account}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
+                          {txn.date} <span className="text-slate-600">{txn.time || ''}</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
+                            txn.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            txn.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                            'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          }`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${
+                              txn.status === 'Completed' ? 'bg-emerald-400' :
+                              txn.status === 'Pending' ? 'bg-amber-400' : 'bg-blue-400'
+                            }`}></span>
+                            {txn.status}
+                          </span>
+                        </td>
+                        <td className={`py-3.5 px-4 text-right font-mono font-bold tabular-nums text-sm ${
+                          isIncome ? 'text-emerald-400' : 'text-slate-200'
+                        }`}>
+                          {isIncome ? '+' : ''}{formatMoney(txn.amount, currency)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="p-4 bg-[#0E131A] border-t border-[#1E2633] flex items-center justify-between text-xs text-slate-400">
+              <span>Showing {filteredList.length} total recorded entries</span>
+              <span className="font-mono text-emerald-400">Verified & Reconciled</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- ANALYTICS VIEW ---
+    function AnalyticsFullView({ currency, monthlyIncome, monthlyExpenses, netSavings, savingsRate, transactions }) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+            <h2 className="text-xl font-bold text-white">Financial Analytics & Runway Projections</h2>
+            <p className="text-xs text-slate-400 mt-1">Institutional cash flow velocity, burn rate forecast, and revenue concentration.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <p className="text-xs text-slate-400 uppercase font-mono">Net Burn Rate / Mo</p>
+              <h3 className="text-2xl font-bold text-emerald-400 font-mono mt-1">+$19.3k Surplus</h3>
+              <p className="text-[11px] text-slate-400 mt-1">Cash flow positive</p>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <p className="text-xs text-slate-400 uppercase font-mono">Zero-Revenue Runway</p>
+              <h3 className="text-2xl font-bold text-white font-mono mt-1">16.2 Months</h3>
+              <p className="text-[11px] text-slate-400 mt-1">At current $9.1k/mo burn</p>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <p className="text-xs text-slate-400 uppercase font-mono">Capital Efficiency</p>
+              <h3 className="text-2xl font-bold text-blue-400 font-mono mt-1">94.8 / 100</h3>
+              <p className="text-[11px] text-slate-400 mt-1">Top decile peer benchmark</p>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <p className="text-xs text-slate-400 uppercase font-mono">Gross Margin</p>
+              <h3 className="text-2xl font-bold text-purple-400 font-mono mt-1">{savingsRate}%</h3>
+              <p className="text-[11px] text-slate-400 mt-1">+$19,309.80 net delta</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="glass-card rounded-2xl p-5 border border-[#1E2633]">
+              <h3 className="text-sm font-bold text-white mb-1">MoM Expenditure Optimization</h3>
+              <p className="text-xs text-slate-400 mb-4">Cost reduction trajectory across core infrastructure lines.</p>
+              
+              <div className="space-y-4">
+                {[
+                  { name: "Cloud Compute (AWS + GCP)", current: "$3,535.80", change: "-8.4%", status: "Optimized (Spot Instances)" },
+                  { name: "SaaS Licenses & Seats", current: "$2,180.00", change: "-12.1%", status: "Pruned 6 Inactive Seats" },
+                  { name: "Contractor Engineering", current: "$1,850.00", change: "+4.2%", status: "Refactoring Delivery Milestone" },
+                  { name: "Growth & Acquisition", current: "$1,120.80", change: "-25.0%", status: "High Organic Conversion" }
+                ].map((item, i) => (
+                  <div key={i} className="p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633] flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200">{item.name}</p>
+                      <p className="text-[10px] text-emerald-400 font-mono">{item.status}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-mono font-bold text-white">{item.current}</p>
+                      <span className="text-[10px] font-mono text-emerald-400 font-semibold">{item.change}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-5 border border-[#1E2633]">
+              <h3 className="text-sm font-bold text-white mb-1">Treasury Diversification Distribution</h3>
+              <p className="text-xs text-slate-400 mb-4">Risk-adjusted allocation across bank institutions and money markets.</p>
+
+              <div className="space-y-3">
+                {[
+                  { name: "Mercury Treasury MM (Yield 5.1%)", pct: 54, amount: "$142,950.25", color: "#10B981" },
+                  { name: "Silicon Valley Bank (Operating)", pct: 28, amount: "$74,100.00", color: "#3B82F6" },
+                  { name: "US Short-Term Sovereign T-Bills", pct: 12, amount: "$31,740.00", color: "#8B5CF6" },
+                  { name: "Institutional Clearing Float", pct: 6, amount: "$15,870.00", color: "#F59E0B" }
+                ].map((item, i) => (
+                  <div key={i} className="p-2.5 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-300 font-medium">{item.name}</span>
+                      <span className="font-mono text-slate-200 font-bold">{item.amount} ({item.pct}%)</span>
+                    </div>
+                    <div className="h-2 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${item.pct}%`, backgroundColor: item.color }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- INVESTMENTS VIEW ---
+    function InvestmentsFullView({ holdings, currency, onOpenTradeModal, showToast }) {
+      const totalPortfolioValue = useMemo(() => {
+        return holdings.reduce((sum, h) => sum + h.value, 0);
+      }, [holdings]);
+
+      const totalPnL = useMemo(() => {
+        return holdings.reduce((sum, h) => sum + h.pnl, 0);
+      }, [holdings]);
+
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-white">Investment Portfolio & Asset Allocation</h2>
+                <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20">
+                  Live Streaming
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Liquid equities, corporate index funds, sovereign debt, and spot digital assets.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <span className="text-xs text-slate-400 font-mono">Portfolio Valuation</span>
+                <h3 className="text-2xl font-extrabold text-white font-mono">{formatMoney(totalPortfolioValue, currency)}</h3>
+                <span className="text-xs font-mono text-emerald-400 font-bold">+{formatMoney(totalPnL, currency)} (+5.69% All-Time)</span>
+              </div>
+              <button
+                onClick={onOpenTradeModal}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-950/40 flex items-center gap-1.5"
+              >
+                <i data-lucide="trending-up" className="w-4 h-4"></i>
+                <span>Trade / Rebalance</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <span className="text-xs text-slate-400 font-mono uppercase">24h Day Gain</span>
+              <h4 className="text-xl font-bold text-emerald-400 font-mono mt-1">+$2,140.20 (+0.63%)</h4>
+              <p className="text-[11px] text-slate-400">Market opening gain</p>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <span className="text-xs text-slate-400 font-mono uppercase">Annualized Yield</span>
+              <h4 className="text-xl font-bold text-blue-400 font-mono mt-1">5.18% APY</h4>
+              <p className="text-[11px] text-slate-400">Blended low-risk yield</p>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+              <span className="text-xs text-slate-400 font-mono uppercase">Active Positions</span>
+              <h4 className="text-xl font-bold text-white font-mono mt-1">{holdings.length} Assets</h4>
+              <p className="text-[11px] text-slate-400">Rebalanced quarterly</p>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl border border-[#1E2633] overflow-hidden shadow-card">
+            <div className="p-4 border-b border-[#1E2633] flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white">Active Positions & Performance</h3>
+              <span className="text-xs font-mono text-slate-400">Streaming ticks every 5s</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#0E131A] border-b border-[#1E2633] text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                  <tr>
+                    <th className="py-3 px-4">Asset Symbol</th>
+                    <th className="py-3 px-4">Asset Class</th>
+                    <th className="py-3 px-4">Holdings</th>
+                    <th className="py-3 px-4">Avg Buy</th>
+                    <th className="py-3 px-4">Live Price</th>
+                    <th className="py-3 px-4">Total Value</th>
+                    <th className="py-3 px-4 text-right">Profit / Loss</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1E2633]/60 font-sans">
+                  {holdings.map(h => {
+                    const isProfit = h.pnl >= 0;
+                    return (
+                      <tr key={h.symbol} className="hover:bg-[#161D29] transition-colors">
+                        <td className="py-3.5 px-4 font-semibold text-white">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-emerald-400 font-mono text-xs">
+                              {h.symbol}
+                            </span>
+                            <span className="text-slate-300">{h.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">{h.type}</td>
+                        <td className="py-3.5 px-4 font-mono text-slate-200">{h.shares}</td>
+                        <td className="py-3.5 px-4 font-mono text-slate-400">${h.avg.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-white">${h.price.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-100">{formatMoney(h.value, currency)}</td>
+                        <td className={`py-3.5 px-4 text-right font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {isProfit ? '+' : ''}{formatMoney(h.pnl, currency)} ({isProfit ? '+' : ''}{h.pnlPct}%)
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SETTINGS VIEW ---
+    function SettingsFullView({ currency, setCurrency, showToast }) {
+      const [emailAlerts, setEmailAlerts] = useState(true);
+      const [twoFactor, setTwoFactor] = useState(true);
+      const [autoReconcile, setAutoReconcile] = useState(true);
+      const [themeMode, setThemeMode] = useState('obsidian'); // obsidian | oled
+
+      return (
+        <div className="max-w-4xl space-y-6">
+          <div className="bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+            <h2 className="text-xl font-bold text-white">Organization & Treasury Settings</h2>
+            <p className="text-xs text-slate-400 mt-1">Configure base currencies, security credentials, automated alerts, and API webhooks.</p>
+          </div>
+
+          <div className="glass-card rounded-2xl p-6 border border-[#1E2633] space-y-6">
+            <h3 className="text-sm font-bold text-white border-b border-[#1E2633] pb-3">Corporate Profile</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Company Legal Entity</label>
+                <input
+                  type="text"
+                  defaultValue="Apex Technologies Corporation"
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Principal Executive</label>
+                <input
+                  type="text"
+                  defaultValue="Alexander Vance (VP Engineering)"
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Authorized Billing Email</label>
+                <input
+                  type="email"
+                  defaultValue="alex.vance@apexcap.io"
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1">Global Base Currency</label>
+                <select
+                  value={currency}
+                  onChange={(e) => { setCurrency(e.target.value); showToast(`Default currency changed to ${e.target.value}`); }}
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  <option value="USD">USD - United States Dollar ($)</option>
+                  <option value="EUR">EUR - Euro (€)</option>
+                  <option value="GBP">GBP - British Pound (£)</option>
+                  <option value="SGD">SGD - Singapore Dollar (S$)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-2xl p-6 border border-[#1E2633] space-y-4">
+            <h3 className="text-sm font-bold text-white border-b border-[#1E2633] pb-3">Security & Automated Safeguards</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
+                <div>
+                  <p className="text-xs font-semibold text-white">Hardware Key / 2FA Enforcement</p>
+                  <p className="text-[11px] text-slate-400">Require YubiKey or TOTP for transfers exceeding $10,000.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={twoFactor}
+                  onChange={(e) => { setTwoFactor(e.target.checked); showToast("Security policy updated"); }}
+                  className="h-4 w-4 accent-emerald-500 cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
+                <div>
+                  <p className="text-xs font-semibold text-white">Automated Real-time Bank Reconciliation</p>
+                  <p className="text-[11px] text-slate-400">Match Stripe merchant settlement batches with bank deposits every 6 hours.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={autoReconcile}
+                  onChange={(e) => { setAutoReconcile(e.target.checked); showToast("Reconciliation settings saved"); }}
+                  className="h-4 w-4 accent-emerald-500 cursor-pointer"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
+                <div>
+                  <p className="text-xs font-semibold text-white">High-Velocity Spend SMS Alerts</p>
+                  <p className="text-[11px] text-slate-400">Instant push notice when single card authorization exceeds $2,500.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={emailAlerts}
+                  onChange={(e) => { setEmailAlerts(e.target.checked); showToast("Alert preference updated"); }}
+                  className="h-4 w-4 accent-emerald-500 cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- KPI CARD ---
+    function KpiCard({ title, value, change, changeType, subtitle, icon, sparkline, sparklineColor = "#10B981" }) {
+      return (
+        <div className="glass-card glass-card-hover rounded-2xl p-5 border border-[#1E2633] shadow-card flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-slate-400 mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</span>
+              <div className="h-8 w-8 rounded-lg bg-[#161D29] border border-[#1E2633] flex items-center justify-center text-slate-300">
+                <i data-lucide={icon} className="w-4 h-4 text-emerald-400"></i>
+              </div>
+            </div>
+            
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight tabular-nums">
+                {value}
+              </h2>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-[#1E2633]/60 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono font-bold ${
+                changeType === 'positive' || changeType === 'favorable'
+                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+              }`}>
+                <i data-lucide={changeType === 'positive' || changeType === 'favorable' ? "arrow-up" : "arrow-down"} className="w-3 h-3"></i>
+                {change}
+              </span>
+              <span className="text-[11px] text-slate-400 truncate max-w-[130px]">{subtitle}</span>
+            </div>
+
+            <div className="w-16 h-6 flex-shrink-0">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 100 30">
+                {sparkline && (
+                  <polyline
+                    fill="none"
+                    stroke={sparklineColor}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={generateSparklinePoints(sparkline, 100, 30)}
+                  />
+                )}
+              </svg>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function generateSparklinePoints(data, width, height) {
+      if (!data || data.length === 0) return "";
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const range = max - min || 1;
+      const step = width / (data.length - 1);
+
+      return data.map((val, idx) => {
+        const x = idx * step;
+        const y = height - ((val - min) / range) * (height - 6) - 3;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+    }
+
+    // --- CHART.JS INCOME VS EXPENSES ---
+    function InteractiveIncomeExpenseChart({ period, type, currency }) {
+      const canvasRef = useRef(null);
+      const chartInstanceRef = useRef(null);
+
+      useEffect(() => {
+        if (!canvasRef.current || !window.Chart) return;
+
+        const dataObj = CASHFLOW_PERIODS[period] || CASHFLOW_PERIODS["7D"];
+        const ctx = canvasRef.current.getContext('2d');
+
+        const incomeGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        incomeGradient.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+        incomeGradient.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+
+        const expenseGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        expenseGradient.addColorStop(0, 'rgba(244, 63, 94, 0.22)');
+        expenseGradient.addColorStop(1, 'rgba(244, 63, 94, 0.00)');
+
+        if (chartInstanceRef.current) chartInstanceRef.current.destroy();
+
+        const symbol = CURRENCIES[currency]?.symbol || '$';
+        const rate = CURRENCIES[currency]?.rate || 1.0;
+
+        chartInstanceRef.current = new window.Chart(ctx, {
+          type: type === 'area' ? 'line' : 'bar',
+          data: {
+            labels: dataObj.labels,
+            datasets: [
+              {
+                label: 'Inflow / Income',
+                data: dataObj.income.map(v => v * rate),
+                borderColor: '#10B981',
+                backgroundColor: type === 'area' ? incomeGradient : 'rgba(16, 185, 129, 0.75)',
+                borderWidth: 2.5,
+                tension: 0.38,
+                fill: type === 'area',
+                pointBackgroundColor: '#10B981',
+                pointBorderColor: '#0B0F14',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                borderRadius: type === 'bar' ? 6 : 0,
+              },
+              {
+                label: 'Outflow / Expenses',
+                data: dataObj.expenses.map(v => v * rate),
+                borderColor: '#F43F5E',
+                backgroundColor: type === 'area' ? expenseGradient : 'rgba(244, 63, 94, 0.75)',
+                borderWidth: 2.5,
+                tension: 0.38,
+                fill: type === 'area',
+                pointBackgroundColor: '#F43F5E',
+                pointBorderColor: '#0B0F14',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                borderRadius: type === 'bar' ? 6 : 0,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#11161F',
+                borderColor: '#1E2633',
+                borderWidth: 1,
+                titleColor: '#F8FAFC',
+                bodyColor: '#94A3B8',
+                padding: 12,
+                boxPadding: 6,
+                usePointStyle: true,
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    label += symbol + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(context.parsed.y);
+                    return label;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(30, 38, 51, 0.4)', drawBorder: false },
+                ticks: { color: '#64748B', font: { family: 'Plus Jakarta Sans', size: 11 } }
+              },
+              y: {
+                grid: { color: 'rgba(30, 38, 51, 0.6)', drawBorder: false },
+                ticks: {
+                  color: '#64748B',
+                  font: { family: 'JetBrains Mono', size: 10 },
+                  callback: function(val) {
+                    if (val >= 1000) return symbol + (val / 1000).toFixed(0) + 'k';
+                    return symbol + val;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        return () => {
+          if (chartInstanceRef.current) chartInstanceRef.current.destroy();
+        };
+      }, [period, type, currency]);
+
+      return <canvas ref={canvasRef} className="w-full h-full"></canvas>;
+    }
+
+    // --- SPENDING DONUT CHART ---
+    function SpendingDonutChart({ currency }) {
+      const canvasRef = useRef(null);
+      const chartInstanceRef = useRef(null);
+
+      useEffect(() => {
+        if (!canvasRef.current || !window.Chart) return;
+        const ctx = canvasRef.current.getContext('2d');
+        if (chartInstanceRef.current) chartInstanceRef.current.destroy();
+
+        const symbol = CURRENCIES[currency]?.symbol || '$';
+        const rate = CURRENCIES[currency]?.rate || 1.0;
+
+        chartInstanceRef.current = new window.Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: SPENDING_CATEGORIES.map(c => c.name),
+            datasets: [{
+              data: SPENDING_CATEGORIES.map(c => c.amount * rate),
+              backgroundColor: SPENDING_CATEGORIES.map(c => c.color),
+              borderColor: '#11161F',
+              borderWidth: 3,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '76%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#11161F',
+                borderColor: '#1E2633',
+                borderWidth: 1,
+                titleColor: '#F8FAFC',
+                bodyColor: '#94A3B8',
+                padding: 10,
+                callbacks: {
+                  label: function(context) {
+                    return ` ${context.label}: ${symbol}${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 }).format(context.parsed)}`;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        return () => {
+          if (chartInstanceRef.current) chartInstanceRef.current.destroy();
+        };
+      }, [currency]);
+
+      return (
+        <div className="relative w-full h-full flex items-center justify-center">
+          <canvas ref={canvasRef}></canvas>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-[10px] font-mono uppercase text-slate-400">Total Spend</span>
+            <span className="text-base font-bold text-white font-mono">
+              {formatMoney(9140.20, currency)}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL: TRADE / REBALANCE ---
+    function TradeOrderModal({ holdings, accounts, currency, onClose, onTrade }) {
+      const [symbol, setSymbol] = useState(holdings[0]?.symbol || 'NVDA');
+      const [action, setAction] = useState('BUY');
+      const [shares, setShares] = useState('10');
+
+      const selectedAsset = holdings.find(h => h.symbol === symbol) || holdings[0];
+      const estimatedTotal = (parseFloat(shares) || 0) * (selectedAsset?.price || 0);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!shares || parseFloat(shares) <= 0) return;
+        onTrade({ symbol, action, shares, price: selectedAsset.price, total: estimatedTotal });
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-2xl shadow-modal overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-[#1E2633]">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                  <i data-lucide="trending-up" className="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Institutional Execution Order</h3>
+                  <p className="text-[11px] text-slate-400">Smart routing order book settlement</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1E2633]">
+                <i data-lucide="x" className="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-2 p-1 bg-[#0B0F14] rounded-xl border border-[#1E2633]">
+                <button
+                  type="button"
+                  onClick={() => setAction('BUY')}
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-slate-400'
+                  }`}
+                >
+                  Buy Asset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAction('SELL')}
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    action === 'SELL' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'text-slate-400'
+                  }`}
+                >
+                  Sell / Liquidate
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Select Portfolio Asset</label>
+                <select
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value)}
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  {holdings.map(h => (
+                    <option key={h.symbol} value={h.symbol}>
+                      {h.symbol} — {h.name} (${h.price.toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Shares / Quantity</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={shares}
+                    onChange={(e) => setShares(e.target.value)}
+                    required
+                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Limit Price</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={`$${selectedAsset?.price?.toFixed(2)}`}
+                    className="w-full bg-[#0B0F14]/60 border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-slate-400 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#0B0F14] rounded-xl border border-[#1E2633] flex justify-between items-center text-xs">
+                <span className="text-slate-400 font-medium">Estimated Order Value:</span>
+                <span className="font-mono font-extrabold text-white text-sm">
+                  {formatMoney(estimatedTotal, currency)}
+                </span>
+              </div>
+
+              <div className="pt-3 border-t border-[#1E2633] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl bg-[#18202C] hover:bg-[#202B3B] text-xs font-semibold text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`px-4 py-2 rounded-xl text-slate-950 font-bold text-xs shadow-md ${
+                    action === 'BUY' ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-rose-500 hover:bg-rose-400 text-white'
+                  }`}
+                >
+                  Confirm {action} Order
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL: TRANSFER MONEY ---
+    function TransferModal({ accounts, currency, onClose, onTransfer }) {
+      const [fromId, setFromId] = useState(accounts[0]?.id || '');
+      const [toId, setToId] = useState(accounts[1]?.id || '');
+      const [amount, setAmount] = useState('');
+      const [note, setNote] = useState('');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (fromId === toId) {
+          alert("Source and destination accounts must be different.");
+          return;
+        }
+        if (!amount || parseFloat(amount) <= 0) {
+          alert("Please enter a valid transfer amount.");
+          return;
+        }
+        onTransfer({ fromId, toId, amount, note });
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-2xl shadow-modal overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-[#1E2633]">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                  <i data-lucide="arrow-right-left" className="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Internal Vault Transfer</h3>
+                  <p className="text-[11px] text-slate-400">Zero fee instant treasury liquidity move</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1E2633]">
+                <i data-lucide="x" className="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Source Account (From)</label>
+                <select
+                  value={fromId}
+                  onChange={(e) => setFromId(e.target.value)}
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} — Balance: {formatMoney(acc.balance, currency)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Destination Vault (To)</label>
+                <select
+                  value={toId}
+                  onChange={(e) => setToId(e.target.value)}
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  {accounts.map(acc => (
+                    <option key={acc.id} value={acc.id} disabled={acc.id === fromId}>
+                      {acc.name} — Balance: {formatMoney(acc.balance, currency)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Transfer Amount ({currency})</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl pl-8 pr-4 py-2.5 text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Transfer Reference / Memo</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Yield rebalance or reserve top-up"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-[#1E2633] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl bg-[#18202C] hover:bg-[#202B3B] text-xs font-semibold text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-950/40"
+                >
+                  Confirm Instant Transfer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL: ADD TRANSACTION ---
+    function AddTransactionModal({ accounts, currency, onClose, onAdd }) {
+      const [desc, setDesc] = useState('');
+      const [merchant, setMerchant] = useState('');
+      const [category, setCategory] = useState('Cloud & Tech');
+      const [account, setAccount] = useState(accounts[0]?.name || 'Primary Operating');
+      const [amount, setAmount] = useState('');
+      const [type, setType] = useState('expense');
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        const amt = parseFloat(amount);
+        if (!amt || amt <= 0) return;
+
+        const newTxn = {
+          id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
+          date: "Aug 26, 2026",
+          time: "Just now",
+          desc: desc || (type === 'income' ? 'Client Remittance' : 'Operating Expense'),
+          merchant: merchant || 'Apex Verified Counterparty',
+          category: type === 'income' ? 'Income' : category,
+          account: account,
+          amount: type === 'income' ? amt : -amt,
+          type: type,
+          status: "Completed",
+          icon: type === 'income' ? 'ArrowDownLeft' : 'CreditCard',
+          authCode: `AUTH-${Math.floor(10000 + Math.random() * 90000)}`
+        };
+
+        onAdd(newTxn);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-2xl shadow-modal overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-[#1E2633]">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                  <i data-lucide="plus-circle" className="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Record New Transaction</h3>
+                  <p className="text-[11px] text-slate-400">Direct manual ledger entry</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1E2633]">
+                <i data-lucide="x" className="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-2 p-1 bg-[#0B0F14] rounded-xl border border-[#1E2633]">
+                <button
+                  type="button"
+                  onClick={() => setType('expense')}
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    type === 'expense' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'text-slate-400'
+                  }`}
+                >
+                  Operating Expense
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setType('income')}
+                  className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    type === 'income' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-slate-400'
+                  }`}
+                >
+                  Revenue Inflow
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. OpenAI Compute API or Client Retainer"
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                  required
+                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Merchant / Entity</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. AWS, Stripe"
+                    value={merchant}
+                    onChange={(e) => setMerchant(e.target.value)}
+                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Amount ({currency})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    disabled={type === 'income'}
+                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Cloud & Tech">Cloud & Tech</option>
+                    <option value="Software & SaaS">Software & SaaS</option>
+                    <option value="Contractors & Payroll">Contractors & Payroll</option>
+                    <option value="Marketing & Ads">Marketing & Ads</option>
+                    <option value="Travel & Dining">Travel & Dining</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1.5">Charged Account</label>
+                  <select
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    {accounts.map(acc => (
+                      <option key={acc.id} value={acc.name}>{acc.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#1E2633] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl bg-[#18202C] hover:bg-[#202B3B] text-xs font-semibold text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-950/40"
+                >
+                  Add to Ledger
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MODAL: TRANSACTION DETAIL / RECEIPT ---
+    function TransactionDetailModal({ txn, currency, onClose, showToast }) {
+      const isIncome = txn.type === 'income';
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-2xl shadow-modal overflow-hidden">
+            <div className="p-5 border-b border-[#1E2633] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-mono text-emerald-400 font-semibold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+                  {txn.id}
+                </span>
+                <span className="text-xs font-bold text-white">Audited Settlement Record</span>
+              </div>
+              <button onClick={onClose} className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#1E2633]">
+                <i data-lucide="x" className="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="text-center py-3 bg-[#0B0F14] rounded-2xl border border-[#1E2633]">
+                <span className="text-[10px] font-mono uppercase text-slate-400">Total Cleared Value</span>
+                <h3 className={`text-3xl font-mono font-extrabold mt-1 ${isIncome ? 'text-emerald-400' : 'text-slate-100'}`}>
+                  {isIncome ? '+' : ''}{formatMoney(txn.amount, currency)}
+                </h3>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 mt-2 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  Reconciled & Cleared
+                </span>
+              </div>
+
+              <div className="space-y-2.5 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-[#1E2633]/60">
+                  <span className="text-slate-400">Description</span>
+                  <span className="font-semibold text-slate-200 text-right">{txn.desc}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[#1E2633]/60">
+                  <span className="text-slate-400">Counterparty Merchant</span>
+                  <span className="font-mono text-slate-200">{txn.merchant}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[#1E2633]/60">
+                  <span className="text-slate-400">Category Tag</span>
+                  <span className="text-slate-200">{txn.category}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[#1E2633]/60">
+                  <span className="text-slate-400">Treasury Account</span>
+                  <span className="font-mono text-slate-200">{txn.account}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[#1E2633]/60">
+                  <span className="text-slate-400">Clearing Timestamp</span>
+                  <span className="font-mono text-slate-400">{txn.date} 14:22:59 UTC</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-[#1E2633]/60">
+                  <span className="text-slate-400">Authorization Code</span>
+                  <span className="font-mono text-emerald-400">{txn.authCode || 'AUTH-99214'}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  onClick={() => {
+                    showToast(`Receipt PDF for ${txn.id} generated and downloaded.`);
+                    onClose();
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-[#18202C] hover:bg-[#202B3B] text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 border border-[#1E2633]"
+                >
+                  <i data-lucide="file-text" className="w-3.5 h-3.5"></i>
+                  Download Receipt
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- COMMAND PALETTE MODAL ---
+    function CommandPaletteModal({ onClose, onNavigate, onAction }) {
+      const [search, setSearch] = useState('');
+
+      const commands = [
+        { id: 'view-dash', label: 'Go to Dashboard Overview', category: 'Navigation', icon: 'layout-dashboard', action: () => onNavigate('dashboard') },
+        { id: 'view-txns', label: 'View All Transactions Ledger', category: 'Navigation', icon: 'arrow-left-right', action: () => onNavigate('transactions') },
+        { id: 'view-cards', label: 'Manage Corporate Cards & Limits', category: 'Navigation', icon: 'credit-card', action: () => onNavigate('cards') },
+        { id: 'view-analytics', label: 'Open Analytics & Burn Runway', category: 'Navigation', icon: 'bar-chart-3', action: () => onNavigate('analytics') },
+        { id: 'view-inv', label: 'Open Investments Portfolio', category: 'Navigation', icon: 'pie-chart', action: () => onNavigate('investments') },
+        { id: 'view-set', label: 'Open Workspace Settings', category: 'Navigation', icon: 'settings', action: () => onNavigate('settings') },
+        { id: 'act-transfer', label: 'Transfer Money Between Vaults', category: 'Actions', icon: 'send', action: () => onAction('transfer') },
+        { id: 'act-add', label: 'Record New Transaction / Spend', category: 'Actions', icon: 'plus-circle', action: () => onAction('add-txn') },
+        { id: 'act-trade', label: 'Execute Asset Trade / Order', category: 'Actions', icon: 'trending-up', action: () => onAction('trade') },
+        { id: 'act-export', label: 'Export Complete CSV Ledger', category: 'Actions', icon: 'download', action: () => onAction('export-csv') },
+      ];
+
+      const filtered = commands.filter(c => c.label.toLowerCase().includes(search.toLowerCase()));
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg bg-[#11161F] border border-[#1E2633] rounded-2xl shadow-modal overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#1E2633]">
+              <i data-lucide="search" className="w-4 h-4 text-emerald-400"></i>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Type a command or jump to page..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-transparent text-sm text-white placeholder-slate-500 focus:outline-none"
+              />
+              <kbd className="px-2 py-0.5 text-[10px] font-mono bg-[#1E2633] text-slate-400 rounded">ESC</kbd>
+            </div>
+
+            <div className="max-h-80 overflow-y-auto p-2 space-y-1">
+              {filtered.map(cmd => (
+                <div
+                  key={cmd.id}
+                  onClick={cmd.action}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#18202C] transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-7 w-7 rounded-lg bg-[#0B0F14] border border-[#1E2633] flex items-center justify-center text-slate-400 group-hover:text-emerald-400">
+                      <i data-lucide={cmd.icon} className="w-3.5 h-3.5"></i>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-200 group-hover:text-white">{cmd.label}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-500">{cmd.category}</span>
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <div className="py-6 text-center text-xs text-slate-500">
+                  No matching actions found for "{search}"
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MOUNT APPLICATION ---
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<FinanceDashboardApp />);
+  </script>
+</body>
+</html>
