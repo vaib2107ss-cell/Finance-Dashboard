@@ -4,16 +4,13 @@ import {
   Search,
   ArrowRightLeft,
   Plus,
-  Bell,
-  ChevronDown
+  Bell
 } from 'lucide-react';
 
 export default function Navbar({
   currentView,
   selectedAccount,
   accounts,
-  currency,
-  setCurrency,
   onOpenCommandPalette,
   onOpenTransferModal,
   onOpenAddTxnModal,
@@ -22,12 +19,11 @@ export default function Navbar({
   setIsNotificationsOpen,
   notifications,
   unreadCount,
-  onMarkAllRead,
-  showToast
+  onMarkAllRead
 }) {
   return (
     <header className="h-16 border-b border-[#1E2633] bg-[#0E131A]/80 backdrop-blur-md px-4 lg:px-8 flex items-center justify-between gap-4 z-30">
-      {/* Mobile Hamburger & Breadcrumb */}
+      {/* Mobile Hamburger & Breadcrumbs */}
       <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onToggleMobileMenu}
@@ -37,9 +33,9 @@ export default function Navbar({
         </button>
 
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-400 font-medium hidden sm:inline">Workspace</span>
+          <span className="text-white font-bold text-sm hidden sm:inline tracking-tight">CASH<span className="text-emerald-400">X</span>FLOW</span>
           <span className="text-slate-500 hidden sm:inline">/</span>
-          <span className="text-white font-semibold capitalize flex items-center gap-2">
+          <span className="text-slate-200 font-semibold capitalize flex items-center gap-2">
             {currentView}
             {selectedAccount !== 'all' && (
               <span className="text-xs font-normal text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
@@ -52,41 +48,32 @@ export default function Navbar({
 
       {/* Action Controls */}
       <div className="flex items-center gap-3">
+        {/* DEMO DATA Badge */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-bold tracking-wider uppercase">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>DEMO DATA</span>
+        </div>
+
+        {/* Currency Pill */}
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#11161F] border border-[#1E2633] text-[11px] font-mono text-emerald-400 font-semibold">
+          <span>₹ INR</span>
+        </div>
+
         {/* Search / Command trigger */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-lg bg-[#11161F] border border-[#1E2633] text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-all text-xs w-64 justify-between shadow-inner"
+          className="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-lg bg-[#11161F] border border-[#1E2633] text-slate-400 hover:text-slate-200 hover:border-slate-600 transition-all text-xs w-52 lg:w-60 justify-between shadow-inner"
         >
           <div className="flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-slate-400" />
-            <span>Quick search or command...</span>
+            <span>Quick command...</span>
           </div>
           <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#1E2633] text-slate-300 rounded border border-slate-700">
             ⌘K
           </kbd>
         </button>
 
-        {/* Currency Switcher */}
-        <div className="relative">
-          <select
-            value={currency}
-            onChange={(e) => {
-              setCurrency(e.target.value);
-              showToast(`Currency switched to ${e.target.value}`);
-            }}
-            className="bg-[#11161F] border border-[#1E2633] text-xs text-slate-200 font-mono font-medium rounded-lg px-2.5 py-1.5 hover:border-slate-600 focus:outline-none focus:border-emerald-500 cursor-pointer appearance-none pr-7"
-          >
-            <option value="USD">USD ($)</option>
-            <option value="EUR">EUR (€)</option>
-            <option value="GBP">GBP (£)</option>
-            <option value="SGD">SGD (S$)</option>
-          </select>
-          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
-            <ChevronDown className="w-3 h-3" />
-          </div>
-        </div>
-
-        {/* Move Funds / Transfer */}
+        {/* Transfer Funds */}
         <button
           onClick={onOpenTransferModal}
           className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] text-xs font-semibold text-slate-200 hover:text-white transition-all shadow-sm"
@@ -98,7 +85,7 @@ export default function Navbar({
         {/* Add Entry */}
         <button
           onClick={onOpenAddTxnModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-all shadow-md shadow-emerald-950/40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-emerald-950/40"
         >
           <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
           <span className="hidden sm:inline">Add Entry</span>

@@ -5,10 +5,12 @@ import {
   KPI_METRICS,
   SPENDING_CATEGORIES,
   INITIAL_TRANSACTIONS,
-  RECURRING_SUBSCRIPTIONS,
+  UPCOMING_PAYMENTS,
   INVESTMENTS_PORTFOLIO,
   NOTIFICATIONS_DATA,
-  CASH_FLOW_CHART_DATA
+  CASH_FLOW_HISTORY,
+  MONEY_DISTRIBUTION,
+  FINANCIAL_HEALTH_METRICS
 } from './data/mockData';
 
 import Sidebar from './components/Sidebar';
@@ -29,29 +31,31 @@ import InvestmentsView from './components/InvestmentsView';
 import SettingsView from './components/SettingsView';
 
 import {
+  Gem,
   Wallet,
   ArrowDownLeft,
   ArrowUpRight,
-  PiggyBank,
+  TrendingDown,
+  ShieldCheck,
+  BarChart3,
   LineChart,
   BarChart2,
-  Check
+  PieChart,
+  Layers,
+  Sparkles,
+  Zap,
+  AlertTriangle,
+  Calendar,
+  Check,
+  Download
 } from 'lucide-react';
-
-const CURRENCY_SYMBOLS = {
-  USD: { symbol: '$', rate: 1.0 },
-  EUR: { symbol: '€', rate: 0.92 },
-  GBP: { symbol: '£', rate: 0.78 },
-  SGD: { symbol: 'S$', rate: 1.34 }
-};
 
 export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
-  const [currency, setCurrency] = useState('USD');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('all');
-  const [timeRange, setTimeRange] = useState('7D');
+  const [cashFlowRange, setCashFlowRange] = useState('6M');
   const [chartType, setChartType] = useState('area');
 
   const [accounts, setAccounts] = useState(ACCOUNTS_DATA);
@@ -60,8 +64,8 @@ export default function App() {
   const [notifications, setNotifications] = useState(NOTIFICATIONS_DATA);
 
   const [cards, setCards] = useState([
-    { id: "c-1", name: "Apex Black Charge Card", pan: "4829 •••• •••• 7712", exp: "08/29", cvv: "492", type: "Corporate Physical", isFrozen: false, limit: 50000, spent: 3240.10, holder: "ALEXANDER VANCE" },
-    { id: "c-2", name: "Cloud & AI Virtual Float", pan: "4111 •••• •••• 9301", exp: "12/28", cvv: "810", type: "Virtual SaaS", isFrozen: false, limit: 10000, spent: 2745.90, holder: "APEX DEV OPS" }
+    { id: "c-1", name: "Axis Magnus Metal Card", pan: "4829 •••• •••• 7712", exp: "08/29", cvv: "492", type: "Priority Metal", isFrozen: false, limit: 500000, spent: 42300.00, holder: "VAIBHAV SHARMA" },
+    { id: "c-2", name: "HDFC Corporate Virtual Float", pan: "4111 •••• •••• 9301", exp: "12/28", cvv: "810", type: "Virtual Cloud", isFrozen: false, limit: 100000, spent: 18400.00, holder: "CASHXFLOW DEV OPS" }
   ]);
 
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -77,17 +81,37 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const formatMoney = (amount, curr = 'USD') => {
-    const { symbol, rate } = CURRENCY_SYMBOLS[curr] || CURRENCY_SYMBOLS.USD;
-    const converted = amount * rate;
-    const absVal = Math.abs(converted);
-    const isNegative = converted < 0;
-    const formatted = new Intl.NumberFormat('en-US', {
+  // Indian Rupee (₹) Formatter
+  const formatINR = (amount, formatType = 'standard') => {
+    const absVal = Math.abs(amount);
+    const isNegative = amount < 0;
+    const sign = isNegative ? '-' : '';
+
+    if (formatType === 'compact') {
+      if (absVal >= 10000000) {
+        return `${sign}₹${(absVal / 10000000).toFixed(2)} Cr`;
+      }
+      if (absVal >= 100000) {
+        return `${sign}₹${(absVal / 100000).toFixed(2)} Lakh`;
+      }
+      if (absVal >= 1000) {
+        return `${sign}₹${(absVal / 1000).toFixed(1)}k`;
+      }
+    }
+
+    return `${sign}₹${new Intl.NumberFormat('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(absVal);
-    return `${isNegative ? '-' : ''}${symbol}${formatted}`;
+    }).format(absVal)}`;
   };
+
+  const dynamicGreeting = useMemo(() => {
+    const hour = new Date().getHours();
+    let greeting = "Good Evening";
+    if (hour < 12) greeting = "Good Morning";
+    else if (hour < 17) greeting = "Good Afternoon";
+    return `${greeting}, ${USER_PROFILE.name} 👋`;
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -112,6 +136,14 @@ export default function App() {
     return accounts.reduce((acc, curr) => acc + curr.balance, 0);
   }, [accounts]);
 
+  const totalInvestments = useMemo(() => {
+    return holdings.reduce((acc, curr) => acc + curr.totalValue, 0);
+  }, [holdings]);
+
+  const netWorth = useMemo(() => {
+    return totalBalance + totalInvestments;
+  }, [totalBalance, totalInvestments]);
+
   const monthlyIncome = useMemo(() => {
     return transactions
       .filter(t => t.type === 'income' && t.status === 'Completed')
@@ -124,8 +156,8 @@ export default function App() {
       .reduce((sum, t) => sum + Math.abs(t.amount), 0);
   }, [transactions]);
 
-  const netSavings = monthlyIncome - monthlyExpenses;
-  const savingsRate = monthlyIncome > 0 ? ((netSavings / monthlyIncome) * 100).toFixed(1) : 0;
+  const netCashFlow = monthlyIncome - monthlyExpenses;
+  const savingsRate = monthlyIncome > 0 ? ((netCashFlow / monthlyIncome) * 100).toFixed(1) : 0;
 
   const handleAddTransaction = (newTxn) => {
     setTransactions([newTxn, ...transactions]);
@@ -154,20 +186,21 @@ export default function App() {
 
     const newTxn = {
       id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: "Aug 26, 2026",
+      date: "Aug 31, 2026",
       time: "Just now",
-      description: `Internal Vault Transfer: ${fromAcc?.name} → ${toAcc?.name}`,
-      merchant: "Internal Liquidity Move",
+      desc: `Internal Transfer: ${fromAcc?.name} → ${toAcc?.name}`,
+      merchant: "Self Liquidity Transfer",
       category: "Transfer",
-      account: fromAcc?.name || "Primary Operating",
+      account: fromAcc?.name || "HDFC Salary & Primary",
       amount: -amt,
       type: "expense",
       status: "Completed",
-      icon: "ArrowRightLeft"
+      icon: "ArrowRightLeft",
+      authCode: `IMPS-IN${Math.floor(10000 + Math.random() * 90000)}`
     };
 
     setTransactions([newTxn, ...transactions]);
-    showToast(`Transferred ${formatMoney(amt, currency)} to ${toAcc?.name}!`);
+    showToast(`Transferred ${formatINR(amt)} to ${toAcc?.name}!`);
     setIsTransferModalOpen(false);
   };
 
@@ -179,28 +212,28 @@ export default function App() {
         const exists = prev.find(h => h.symbol === symbol);
         if (exists) {
           const newShares = exists.shares + parseFloat(shares);
-          const newAvg = +(((exists.shares * exists.avg) + cost) / newShares).toFixed(2);
-          const newValue = +(newShares * exists.price).toFixed(2);
+          const newAvg = +(((exists.shares * exists.avgCost) + cost) / newShares).toFixed(2);
+          const newValue = +(newShares * exists.currentPrice).toFixed(2);
           const newPnl = +(newValue - (newShares * newAvg)).toFixed(2);
           const newPnlPct = +((newPnl / (newShares * newAvg)) * 100).toFixed(2);
-          return prev.map(h => h.symbol === symbol ? { ...h, shares: newShares, avg: newAvg, value: newValue, pnl: newPnl, pnlPct: newPnlPct } : h);
+          return prev.map(h => h.symbol === symbol ? { ...h, shares: newShares, avgCost: newAvg, totalValue: newValue, gainLoss: newPnl, gainLossPct: newPnlPct } : h);
         }
         return prev;
       });
-      showToast(`Executed BUY ${shares} ${symbol} for ${formatMoney(cost, currency)}!`);
+      showToast(`Executed BUY ${shares} ${symbol} for ${formatINR(cost)}!`);
     } else {
       setAccounts(prev => prev.map(a => a.id === 'acc-1' ? { ...a, balance: a.balance + cost } : a));
       setHoldings(prev => prev.map(h => {
         if (h.symbol === symbol) {
           const newShares = Math.max(0, h.shares - parseFloat(shares));
-          const newValue = +(newShares * h.price).toFixed(2);
-          const newPnl = +(newValue - (newShares * h.avg)).toFixed(2);
-          const newPnlPct = newShares > 0 ? +((newPnl / (newShares * h.avg)) * 100).toFixed(2) : 0;
-          return { ...h, shares: newShares, value: newValue, pnl: newPnl, pnlPct: newPnlPct };
+          const newValue = +(newShares * h.currentPrice).toFixed(2);
+          const newPnl = +(newValue - (newShares * h.avgCost)).toFixed(2);
+          const newPnlPct = newShares > 0 ? +((newPnl / (newShares * h.avgCost)) * 100).toFixed(2) : 0;
+          return { ...h, shares: newShares, totalValue: newValue, gainLoss: newPnl, gainLossPct: newPnlPct };
         }
         return h;
       }));
-      showToast(`Executed SELL ${shares} ${symbol} for ${formatMoney(cost, currency)}!`);
+      showToast(`Executed SELL ${shares} ${symbol} for ${formatINR(cost)}!`);
     }
     setIsTradeModalOpen(false);
   };
@@ -217,27 +250,28 @@ export default function App() {
   };
 
   const handleExportCSV = () => {
-    const headers = ["Transaction ID", "Date", "Description", "Merchant", "Category", "Account", "Amount", "Type", "Status"];
+    const headers = ["Transaction ID", "Date", "Description", "Merchant", "Category", "Account", "Amount (INR)", "Type", "Status", "Auth Code"];
     const rows = transactions.map(t => [
       t.id,
       t.date,
-      `"${(t.description || t.desc || '').replace(/"/g, '""')}"`,
+      `"${(t.desc || t.description || '').replace(/"/g, '""')}"`,
       `"${(t.merchant || '').replace(/"/g, '""')}"`,
       t.category,
       `"${t.account}"`,
       t.amount,
       t.type,
-      t.status
+      t.status,
+      t.authCode || 'N/A'
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Apex_Transactions_Export_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `CASHXFLOW_Ledger_Export_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast("CSV ledger export generated and downloaded!");
+    showToast("CASHXFLOW CSV ledger export generated and downloaded!");
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -263,8 +297,7 @@ export default function App() {
         accounts={accounts}
         selectedAccount={selectedAccount}
         setSelectedAccount={setSelectedAccount}
-        currency={currency}
-        formatMoney={formatMoney}
+        formatINR={formatINR}
         transactionsCount={transactions.length}
       />
 
@@ -273,8 +306,6 @@ export default function App() {
           currentView={currentView}
           selectedAccount={selectedAccount}
           accounts={accounts}
-          currency={currency}
-          setCurrency={setCurrency}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           onOpenTransferModal={() => setIsTransferModalOpen(true)}
           onOpenAddTxnModal={() => setIsAddTxnModalOpen(true)}
@@ -287,20 +318,20 @@ export default function App() {
             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
             showToast("All notifications marked as read");
           }}
-          showToast={showToast}
         />
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
           {currentView === 'dashboard' && (
             <div className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#11161F]/70 border border-[#1E2633] p-4 sm:p-5 rounded-2xl backdrop-blur-md">
+              {/* Header Greeting */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#11161F]/70 border border-[#1E2633] p-5 rounded-2xl backdrop-blur-md">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Financial Treasury Overview</h1>
+                  <div className="flex items-center gap-2.5">
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{dynamicGreeting}</h1>
                     <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                    Real-time multi-entity cash flow, burn rate monitoring, and automated ledger settlements.
+                    Smart Cash Flow & Financial Management Dashboard • <span className="text-emerald-400 font-mono">Net Surplus: +{formatINR(netCashFlow)} this month</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2.5 flex-wrap">
@@ -317,7 +348,7 @@ export default function App() {
                         onClick={() => setSelectedAccount(acc.id)}
                         className={`px-2.5 py-1 rounded-md transition-all font-medium ${selectedAccount === acc.id ? 'bg-[#1E2633] text-emerald-400' : 'text-slate-400 hover:text-slate-200'}`}
                       >
-                        {acc.name.split(' ')[0]}
+                        {acc.badge || acc.name.split(' ')[0]}
                       </button>
                     ))}
                   </div>
@@ -325,92 +356,134 @@ export default function App() {
                     onClick={handleExportCSV}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] rounded-lg text-xs font-semibold text-slate-200 transition-colors"
                   >
+                    <Download className="w-3.5 h-3.5" />
                     <span>Report</span>
                   </button>
                 </div>
               </div>
 
+              {/* 4 Main KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 <KpiCard
-                  title="Total Treasury Balance"
-                  value={formatMoney(totalBalance, currency)}
-                  change="+12.8%"
+                  title="Net Worth"
+                  value={formatINR(netWorth)}
+                  compactValue={formatINR(netWorth, 'compact')}
+                  change="↑ 14.2%"
                   changeType="positive"
-                  subtitle="vs last month (+$16.5k)"
-                  icon={<Wallet className="w-4 h-4 text-emerald-400" />}
-                  sparkline={[122, 126, 124, 131, 138, 141, 145]}
-                  sparklineColor="#10B981"
-                />
-                <KpiCard
-                  title="Monthly Income / Inflow"
-                  value={formatMoney(monthlyIncome, currency)}
-                  change="+8.4%"
-                  changeType="positive"
-                  subtitle="Target: $25,000.00/mo"
-                  icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />}
-                  sparkline={[21, 24, 22, 26, 25, 27, 28]}
-                  sparklineColor="#10B981"
-                />
-                <KpiCard
-                  title="Monthly Burn / Expenses"
-                  value={formatMoney(monthlyExpenses, currency)}
-                  change="-3.2%"
-                  changeType="favorable"
-                  subtitle="Envelope: $12,000.00 max"
-                  icon={<ArrowUpRight className="w-4 h-4 text-rose-400" />}
-                  sparkline={[11, 10.5, 9.8, 10.1, 9.6, 9.4, 9.1]}
-                  sparklineColor="#F43F5E"
-                />
-                <KpiCard
-                  title="Net Retained Capital"
-                  value={formatMoney(netSavings, currency)}
-                  change={`${savingsRate}%`}
-                  changeType="positive"
-                  subtitle="Healthy corporate runway"
-                  icon={<PiggyBank className="w-4 h-4 text-blue-400" />}
-                  sparkline={[9.8, 14, 13, 15.9, 15.8, 17.6, 19.3]}
+                  subtitle="vs last month (+₹6.02L)"
+                  icon={<Gem className="w-4 h-4 text-blue-400" />}
+                  sparkline={[3850000, 4020000, 4180000, 4390000, 4520000, 4710000, 4850000]}
                   sparklineColor="#3B82F6"
+                />
+                <KpiCard
+                  title="Total Balance"
+                  value={formatINR(totalBalance)}
+                  compactValue={formatINR(totalBalance, 'compact')}
+                  change="↑ 8.6%"
+                  changeType="positive"
+                  subtitle="vs last month (+₹1.33L)"
+                  icon={<Wallet className="w-4 h-4 text-emerald-400" />}
+                  sparkline={[1350000, 1420000, 1380000, 1490000, 1540000, 1610000, 1687620]}
+                  sparklineColor="#10B981"
+                />
+                <KpiCard
+                  title="Monthly Income"
+                  value={formatINR(monthlyIncome)}
+                  compactValue={formatINR(monthlyIncome, 'compact')}
+                  change="↑ 12.4%"
+                  changeType="positive"
+                  subtitle="vs ₹2.53 Lakh last mo"
+                  icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />}
+                  sparkline={[240000, 245000, 260000, 255000, 270000, 278000, 285000]}
+                  sparklineColor="#10B981"
+                />
+                <KpiCard
+                  title="Monthly Expenses"
+                  value={formatINR(monthlyExpenses)}
+                  compactValue={formatINR(monthlyExpenses, 'compact')}
+                  change="↓ 4.2%"
+                  changeType="favorable"
+                  subtitle="vs ₹99.5k last mo (Favorable)"
+                  icon={<ArrowUpRight className="w-4 h-4 text-rose-400" />}
+                  sparkline={[110000, 105000, 118000, 98000, 102000, 99500, 95400]}
+                  sparklineColor="#F43F5E"
                 />
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1E2633]/60">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm sm:text-base font-bold text-white">Cash Inflow vs. Operating Outflow</h3>
-                        <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                          Surplus: +{formatMoney(netSavings, currency)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">Historical revenue streams versus vendor and payroll expenditures.</p>
+              {/* Net Cash Flow Banner */}
+              <div className="glass-card rounded-2xl p-4 sm:p-5 border border-emerald-500/30 bg-gradient-to-r from-[#11161F] via-[#121E23] to-[#11161F] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-glow-green">
+                <div className="flex items-center gap-3.5">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                    ₹
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Net Monthly Cash Flow (Income − Expenses)</span>
+                    <div className="flex items-baseline gap-3 mt-0.5">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">{formatINR(netCashFlow)}</h2>
+                      <span className="text-xs font-mono font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                        Savings Rate: {savingsRate}%
+                      </span>
                     </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs font-mono">
+                  <div className="px-3 py-2 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
+                    <span className="text-slate-400 text-[10px] block">Inflow</span>
+                    <span className="font-bold text-emerald-400">{formatINR(monthlyIncome)}</span>
+                  </div>
+                  <span className="text-slate-500 font-bold">−</span>
+                  <div className="px-3 py-2 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
+                    <span className="text-slate-400 text-[10px] block">Outflow</span>
+                    <span className="font-bold text-rose-400">{formatINR(monthlyExpenses)}</span>
+                  </div>
+                  <span className="text-slate-500 font-bold">=</span>
+                  <div className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                    <span className="text-emerald-400 text-[10px] block">Surplus</span>
+                    <span className="font-bold text-white">{formatINR(netCashFlow)}</span>
+                  </div>
+                </div>
+              </div>
 
+              {/* 2x2 Middle Section:
+                  1. Cash Flow (Income vs Expenses vs Net)
+                  2. Spending Distribution Donut
+                  3. Monthly Spending Trend
+                  4. Financial Health Score
+              */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 1. Cash Flow Chart */}
+                <div className="glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1E2633]/60">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-emerald-400" />
+                        Cash Flow (Income vs Expenses vs Net)
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">3-Series comparison across months with net retained cash.</p>
+                    </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center bg-[#0B0F14] p-1 rounded-lg border border-[#1E2633]">
                         <button
                           onClick={() => setChartType('area')}
                           className={`p-1.5 rounded-md text-xs transition-colors ${chartType === 'area' ? 'bg-[#1E2633] text-emerald-400' : 'text-slate-400'}`}
-                          title="Area Trend"
                         >
                           <LineChart className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => setChartType('bar')}
                           className={`p-1.5 rounded-md text-xs transition-colors ${chartType === 'bar' ? 'bg-[#1E2633] text-emerald-400' : 'text-slate-400'}`}
-                          title="Bar Comparison"
                         >
                           <BarChart2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
                       <div className="flex items-center bg-[#0B0F14] p-1 rounded-lg border border-[#1E2633] text-xs font-mono font-medium">
-                        {["7D", "30D", "90D", "1Y"].map(period => (
+                        {["6M", "12M"].map(period => (
                           <button
                             key={period}
-                            onClick={() => setTimeRange(period)}
+                            onClick={() => setCashFlowRange(period)}
                             className={`px-2.5 py-1 rounded-md transition-all ${
-                              timeRange === period
+                              cashFlowRange === period
                                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold'
                                 : 'text-slate-400 hover:text-slate-200'
                             }`}
@@ -422,70 +495,243 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="my-4 h-72 w-full relative">
+                  <div className="my-4 h-64 w-full relative">
                     <IncomeExpenseChart
-                      period={timeRange}
+                      period={cashFlowRange}
                       type={chartType}
-                      currency={currency}
-                      data={CASH_FLOW_CHART_DATA[timeRange]?.map(d => ({
-                        name: d.period,
+                      data={CASH_FLOW_HISTORY.map(d => ({
+                        name: d.month,
                         income: d.income,
+                        expenses: d.expenses,
+                        net: d.net
+                      }))}
+                    />
+                  </div>
+
+                  <div className="pt-3 border-t border-[#1E2633]/60 grid grid-cols-3 gap-2 text-center">
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-400"></div>
+                      <span className="text-[11px] font-mono text-slate-300">Income</span>
+                    </div>
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="h-2.5 w-2.5 rounded-full bg-rose-500"></div>
+                      <span className="text-[11px] font-mono text-slate-300">Expenses</span>
+                    </div>
+                    <div className="flex items-center gap-2 justify-center">
+                      <div className="h-2.5 w-2.5 rounded-full bg-cyan-400"></div>
+                      <span className="text-[11px] font-mono text-slate-300">Net Cash</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Spending Distribution */}
+                <div className="glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
+                  <div className="pb-4 border-b border-[#1E2633]/60 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <PieChart className="w-4 h-4 text-purple-400" />
+                        Spending Distribution
+                      </h3>
+                      <p className="text-xs text-slate-400">Food, Bills, Shopping, Travel, Investments, etc.</p>
+                    </div>
+                    <span className="text-xs font-mono text-slate-300 font-bold">{formatINR(monthlyExpenses)}</span>
+                  </div>
+
+                  <div className="my-2 flex-1">
+                    <CategoryBreakdown
+                      categories={SPENDING_CATEGORIES}
+                      formatINR={formatINR}
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Monthly Spending Trend */}
+                <div className="glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
+                  <div className="flex items-center justify-between pb-4 border-b border-[#1E2633]/60">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-emerald-400" />
+                        Monthly Spending Trend
+                      </h3>
+                      <p className="text-xs text-slate-400">Expense trajectory (Decreasing = Healthy).</p>
+                    </div>
+                    <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      ↓ 4.2% MoM Drop
+                    </span>
+                  </div>
+
+                  <div className="my-4 h-60 w-full relative">
+                    <IncomeExpenseChart
+                      period="6M"
+                      type="area"
+                      data={CASH_FLOW_HISTORY.map(d => ({
+                        name: d.month,
                         expenses: d.expenses
                       }))}
                     />
                   </div>
 
-                  <div className="pt-4 border-t border-[#1E2633]/60 grid grid-cols-3 gap-3 text-center sm:text-left">
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                      <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></div>
-                      <div>
-                        <p className="text-[10px] uppercase font-mono text-slate-400">Total Inflow ({timeRange})</p>
-                        <p className="text-xs sm:text-sm font-mono font-bold text-slate-100">{formatMoney(monthlyIncome, currency)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                      <div className="h-3 w-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></div>
-                      <div>
-                        <p className="text-[10px] uppercase font-mono text-slate-400">Total Outflow ({timeRange})</p>
-                        <p className="text-xs sm:text-sm font-mono font-bold text-slate-100">{formatMoney(monthlyExpenses, currency)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                      <div className="h-3 w-3 rounded-full bg-blue-400"></div>
-                      <div>
-                        <p className="text-[10px] uppercase font-mono text-slate-400">Net Retained</p>
-                        <p className="text-xs sm:text-sm font-mono font-bold text-emerald-400">+{formatMoney(netSavings, currency)}</p>
-                      </div>
-                    </div>
+                  <div className="pt-3 border-t border-[#1E2633]/60 flex items-center justify-between text-xs text-slate-400">
+                    <span>Avg Monthly Burn: <strong className="text-white font-mono">₹1,02,737</strong></span>
+                    <span className="text-emerald-400 font-mono font-medium">Within ₹1.2L Budget Envelope</span>
                   </div>
                 </div>
 
+                {/* 4. Financial Health Score */}
                 <div className="glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] flex flex-col justify-between shadow-card">
-                  <div className="pb-4 border-b border-[#1E2633]/60 flex items-center justify-between">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#1E2633]/60">
                     <div>
-                      <h3 className="text-sm sm:text-base font-bold text-white">Expense Allocation</h3>
-                      <p className="text-xs text-slate-400">Aug 2026 breakdown</p>
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        Financial Health Score
+                      </h3>
+                      <p className="text-xs text-slate-400">Multi-factor liquidity, savings rate, runway & debt analysis.</p>
                     </div>
-                    <span className="text-xs font-mono text-slate-400 font-semibold">{formatMoney(monthlyExpenses, currency)}</span>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase">
+                      Top 5% Tier
+                    </span>
                   </div>
 
-                  <div className="my-3 flex-1 flex items-center justify-center">
-                    <CategoryBreakdown
-                      categories={SPENDING_CATEGORIES}
-                      currency={currency}
-                      formatMoney={formatMoney}
-                    />
+                  <div className="my-3 flex items-center justify-between p-4 rounded-2xl bg-[#0B0F14] border border-[#1E2633]">
+                    <div className="flex items-center gap-4">
+                      <div className="h-16 w-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex flex-col items-center justify-center">
+                        <span className="text-2xl font-black text-emerald-400 font-mono leading-none">87</span>
+                        <span className="text-[9px] font-mono text-slate-400">/ 100</span>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-white tracking-tight">HEALTHY STATUS</h4>
+                        <p className="text-xs text-slate-400">Optimal savings & low leverage debt</p>
+                      </div>
+                    </div>
+                    <div className="text-right font-mono">
+                      <span className="text-[10px] uppercase text-slate-400 block">Emergency Cash</span>
+                      <span className="text-sm font-bold text-emerald-400">17.6 Months</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 pt-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Savings Target Rate</span>
+                      <span className="text-emerald-400 font-mono font-bold">{savingsRate}% (Benchmark: 40%)</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(savingsRate, 100)}%` }}></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 text-xs font-mono">
+                      <div className="p-2 rounded-lg bg-[#11161F] border border-[#1E2633]">
+                        <span className="text-[10px] text-slate-400 block">Investments Return</span>
+                        <span className="font-bold text-blue-400">+14.8% p.a.</span>
+                      </div>
+                      <div className="p-2 rounded-lg bg-[#11161F] border border-[#1E2633]">
+                        <span className="text-[10px] text-slate-400 block">EMI / Income Ratio</span>
+                        <span className="font-bold text-emerald-400">14.8% (Safe)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* Money Distribution + AI Insights */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#1E2633]/60">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-blue-400" />
+                      Money Distribution
+                    </h3>
+                    <span className="text-xs font-mono text-slate-300 font-bold">{formatINR(netWorth, 'compact')} Total</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {MONEY_DISTRIBUTION.map(item => (
+                      <div key={item.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-300 font-medium">{item.name}</span>
+                          <span className="font-mono text-slate-200 font-bold">{formatINR(item.amount, 'compact')} ({item.percentage}%)</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${item.percentage}%`, backgroundColor: item.color }}></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2 glass-card rounded-2xl p-5 sm:p-6 border border-[#1E2633] space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#1E2633]/60">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      Financial Insights & AI Recommendations
+                    </h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      Automated Synthesis
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div className="p-3.5 rounded-xl bg-[#0B0F14] border border-[#1E2633] space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                          <TrendingDown className="w-3.5 h-3.5" />
+                          Spending Reduced 4.2%
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.2 rounded">Efficiency</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        You saved ₹4,180 compared to last month. Food and travel expenses saw the most significant drop.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#0B0F14] border border-[#1E2633] space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                          <PieChart className="w-3.5 h-3.5" />
+                          Investments at 50.5% Net Worth
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400 bg-slate-800 px-1.5 py-0.2 rounded">Growth</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Equity & Mutual Fund assets reached ₹24.50 Lakh, generating ₹32,400 in unrealized gains this month.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#121B27] to-[#0E141D] border border-blue-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-blue-400" />
+                          Move ₹50k to ICICI Sweep Deposit
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-400 font-bold">+₹3,550/yr</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        HDFC Primary balance (₹3.85L) exceeds monthly liquidity needs. Earn 7.1% APY without locking funds.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#1B1812] to-[#14120E] border border-amber-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                          Shopping Envelope at 84%
+                        </span>
+                        <span className="text-[10px] font-mono text-amber-400 font-bold">₹2,736 Left</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        You spent ₹15,264 out of your ₹18,000 shopping budget with 5 days remaining in the billing cycle.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lower Section: Upcoming Payments & Recent Transactions */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <FinancialOverview
                   savingsRate={savingsRate}
                   monthlyExpenses={monthlyExpenses}
-                  currency={currency}
-                  formatMoney={formatMoney}
-                  recurringBills={RECURRING_SUBSCRIPTIONS}
+                  formatINR={formatINR}
+                  upcomingPayments={UPCOMING_PAYMENTS}
                   onTransferClick={() => setIsTransferModalOpen(true)}
                   onAddTxnClick={() => setIsAddTxnModalOpen(true)}
                 />
@@ -493,11 +739,10 @@ export default function App() {
                 <div className="lg:col-span-2">
                   <TransactionsTable
                     transactions={transactions}
-                    currency={currency}
-                    formatMoney={formatMoney}
+                    formatINR={formatINR}
                     onSelectTransaction={(txn) => setSelectedTxnForModal(txn)}
                     onExportCSV={handleExportCSV}
-                    limit={7}
+                    limit={6}
                   />
                 </div>
               </div>
@@ -508,14 +753,15 @@ export default function App() {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
                 <div>
-                  <h2 className="text-xl font-bold text-white">Audited Transactions Ledger</h2>
-                  <p className="text-xs text-slate-400 mt-1">Multi-currency bank authorizations, merchant wires, and categorized expenses.</p>
+                  <h2 className="text-xl font-bold text-white">Audited Transactions Ledger (INR ₹)</h2>
+                  <p className="text-xs text-slate-400 mt-1">Multi-account bank authorizations, merchant wires, and categorized expenses.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleExportCSV}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] text-xs font-semibold text-slate-200 transition-colors"
                   >
+                    <Download className="w-3.5 h-3.5" />
                     <span>Export CSV</span>
                   </button>
                   <button
@@ -529,8 +775,7 @@ export default function App() {
 
               <TransactionsTable
                 transactions={transactions}
-                currency={currency}
-                formatMoney={formatMoney}
+                formatINR={formatINR}
                 onSelectTransaction={(txn) => setSelectedTxnForModal(txn)}
                 onExportCSV={handleExportCSV}
                 limit={0}
@@ -541,8 +786,7 @@ export default function App() {
           {currentView === 'cards' && (
             <CardsView
               cards={cards}
-              currency={currency}
-              formatMoney={formatMoney}
+              formatINR={formatINR}
               onToggleFreeze={handleToggleFreezeCard}
               showToast={showToast}
             />
@@ -550,21 +794,19 @@ export default function App() {
 
           {currentView === 'analytics' && (
             <AnalyticsView
-              currency={currency}
               monthlyIncome={monthlyIncome}
               monthlyExpenses={monthlyExpenses}
-              netSavings={netSavings}
+              netCashFlow={netCashFlow}
               savingsRate={savingsRate}
-              transactions={transactions}
-              formatMoney={formatMoney}
+              formatINR={formatINR}
+              netWorth={netWorth}
             />
           )}
 
           {currentView === 'investments' && (
             <InvestmentsView
               holdings={holdings}
-              currency={currency}
-              formatMoney={formatMoney}
+              formatINR={formatINR}
               onOpenTradeModal={() => setIsTradeModalOpen(true)}
               showToast={showToast}
             />
@@ -572,8 +814,6 @@ export default function App() {
 
           {currentView === 'settings' && (
             <SettingsView
-              currency={currency}
-              setCurrency={setCurrency}
               showToast={showToast}
             />
           )}
@@ -583,8 +823,7 @@ export default function App() {
       {isTransferModalOpen && (
         <TransferModal
           accounts={accounts}
-          currency={currency}
-          formatMoney={formatMoney}
+          formatINR={formatINR}
           onClose={() => setIsTransferModalOpen(false)}
           onTransfer={handleTransfer}
         />
@@ -593,7 +832,7 @@ export default function App() {
       {isAddTxnModalOpen && (
         <AddTransactionModal
           accounts={accounts}
-          currency={currency}
+          formatINR={formatINR}
           onClose={() => setIsAddTxnModalOpen(false)}
           onAdd={handleAddTransaction}
         />
@@ -603,8 +842,7 @@ export default function App() {
         <TradeOrderModal
           holdings={holdings}
           accounts={accounts}
-          currency={currency}
-          formatMoney={formatMoney}
+          formatINR={formatINR}
           onClose={() => setIsTradeModalOpen(false)}
           onTrade={handleTrade}
         />
@@ -613,8 +851,7 @@ export default function App() {
       {selectedTxnForModal && (
         <TransactionDetailModal
           txn={selectedTxnForModal}
-          currency={currency}
-          formatMoney={formatMoney}
+          formatINR={formatINR}
           onClose={() => setSelectedTxnForModal(null)}
           showToast={showToast}
         />

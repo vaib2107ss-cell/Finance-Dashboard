@@ -22,8 +22,7 @@ export default function Sidebar({
   accounts,
   selectedAccount,
   setSelectedAccount,
-  currency,
-  formatMoney,
+  formatINR,
   transactionsCount
 }) {
   return (
@@ -35,7 +34,7 @@ export default function Sidebar({
         ${sidebarCollapsed ? 'w-20' : 'w-64'}
       `}
     >
-      {/* Brand Header */}
+      {/* Header Brand */}
       <div className="flex h-16 items-center justify-between px-5 border-b border-[#1E2633]/80">
         <div
           className="flex items-center gap-3 cursor-pointer"
@@ -44,18 +43,18 @@ export default function Sidebar({
             setMobileMenuOpen(false);
           }}
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-md shadow-emerald-900/30 text-slate-950 font-extrabold text-lg tracking-tighter">
-            ▲
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 shadow-md shadow-emerald-900/40 text-slate-950 font-black text-lg tracking-tighter">
+            ₹
           </div>
           {!sidebarCollapsed && (
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base tracking-tight text-white font-sans">APEX</span>
-                <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                  Fintech
+                <span className="font-extrabold text-base tracking-tight text-white font-sans">CASH<span className="text-emerald-400">X</span>FLOW</span>
+                <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                  PRO
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400 font-medium tracking-tight">Institutional Treasury</span>
+              <span className="text-[10px] text-slate-400 font-medium tracking-tight truncate max-w-[150px]">Smart Cash Flow & Treasury</span>
             </div>
           )}
         </div>
@@ -102,8 +101,8 @@ export default function Sidebar({
             />
             <SidebarItem
               icon={<CreditCard className="w-4 h-4" />}
-              label="Corporate Cards"
-              badge="2 Active"
+              label="Cards & Limits"
+              badge="2 Cards"
               badgeColor="blue"
               active={currentView === 'cards'}
               collapsed={sidebarCollapsed}
@@ -111,15 +110,15 @@ export default function Sidebar({
             />
             <SidebarItem
               icon={<BarChart3 className="w-4 h-4" />}
-              label="Analytics"
+              label="Analytics & Runway"
               active={currentView === 'analytics'}
               collapsed={sidebarCollapsed}
               onClick={() => { setCurrentView('analytics'); setMobileMenuOpen(false); }}
             />
             <SidebarItem
               icon={<PieChart className="w-4 h-4" />}
-              label="Investments"
-              badge="+5.7%"
+              label="Investments (SIPs)"
+              badge="+15.1%"
               badgeColor="emerald"
               active={currentView === 'investments'}
               collapsed={sidebarCollapsed}
@@ -135,12 +134,12 @@ export default function Sidebar({
           </nav>
         </div>
 
-        {/* Accounts / Vaults */}
+        {/* Linked Accounts */}
         {!sidebarCollapsed && (
           <div className="pt-2 border-t border-[#1E2633]/60">
             <div className="flex items-center justify-between px-3 mb-2.5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-                Vault Accounts
+                Bank Vaults & Cards
               </p>
               <span className="text-[11px] text-emerald-400 font-mono font-medium">{accounts.length} Active</span>
             </div>
@@ -159,11 +158,11 @@ export default function Sidebar({
                     <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: acc.color }}></span>
                     <div className="truncate">
                       <p className="text-xs font-medium text-slate-200 truncate group-hover:text-white">{acc.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{acc.accountNumber || acc.number}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">{acc.number || acc.accountNumber}</p>
                     </div>
                   </div>
                   <span className="text-xs font-mono font-semibold text-slate-300 tabular-nums">
-                    {formatMoney(acc.balance, currency)}
+                    {formatINR(acc.balance, 'compact')}
                   </span>
                 </div>
               ))}
@@ -179,15 +178,15 @@ export default function Sidebar({
           onClick={() => { setCurrentView('settings'); setMobileMenuOpen(false); }}
         >
           <div className="relative flex-shrink-0">
-            <div className="h-9 w-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-sm text-emerald-400">
-              AV
+            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center font-bold text-sm text-emerald-400">
+              VS
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#11161F]"></span>
           </div>
           {!sidebarCollapsed && (
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-xs font-semibold text-white truncate">Alexander Vance</span>
-              <span className="text-[10px] text-slate-400 truncate">VP Engineering / Apex</span>
+              <span className="text-xs font-semibold text-white truncate">Vaibhav Sharma</span>
+              <span className="text-[10px] text-emerald-400 font-mono truncate">Super Priority Wealth</span>
             </div>
           )}
           {!sidebarCollapsed && <ChevronUp className="w-4 h-4 text-slate-400" />}
