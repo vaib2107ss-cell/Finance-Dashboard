@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CASHXFLOW — Multi-User Smart Cash Flow & Financial Management Platform</title>
+  <title>CASHXFLOW — Smart Multi-User Cash Flow & Financial Management</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,9 +45,7 @@
               borderLight: '#18202C',
               accent: '#10B981',
               accentHover: '#059669',
-              accentMuted: 'rgba(16, 185, 129, 0.12)',
               danger: '#F43F5E',
-              dangerMuted: 'rgba(244, 63, 94, 0.12)',
               warning: '#F59E0B',
               info: '#3B82F6',
               purple: '#8B5CF6',
@@ -57,8 +55,7 @@
           boxShadow: {
             'card': '0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3)',
             'card-hover': '0 8px 30px -4px rgba(0, 0, 0, 0.6), 0 4px 10px -2px rgba(0, 0, 0, 0.4)',
-            'glow-green': '0 0 25px -5px rgba(16, 185, 129, 0.3)',
-            'glow-blue': '0 0 25px -5px rgba(59, 130, 246, 0.3)',
+            'glow-green': '0 0 25px -5px rgba(16, 185, 129, 0.25)',
             'modal': '0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08)',
           }
         }
@@ -73,12 +70,11 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
     }
 
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-track {
       background: #0B0F14;
@@ -97,9 +93,8 @@
 
     .bg-mesh-glow {
       background-image: 
-        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.04) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
-        radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.03) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.03) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
     }
 
     .glass-card {
@@ -117,12 +112,6 @@
       border-color: rgba(255, 255, 255, 0.12);
       transform: translateY(-1px);
     }
-
-    .credit-card-gradient {
-      background: linear-gradient(135deg, #161F2E 0%, #0B0F14 100%);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
   </style>
 </head>
 <body class="bg-[#0B0F14] text-slate-100 min-h-screen selection:bg-emerald-500/20 selection:text-emerald-400">
@@ -131,30 +120,19 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    // --- CURRENCY & NUMBER FORMATTER (INR ₹ with Fallbacks) ---
-    function formatMoney(amount, currency = 'INR', formatType = 'standard') {
-      const absVal = Math.abs(amount);
-      const isNegative = amount < 0;
+    // --- CLEAN RUPEE (₹) FORMATTER (Not in Lakhs, Clean & Legible) ---
+    function formatMoney(amount, currency = 'INR', compact = false) {
+      const absVal = Math.abs(amount || 0);
+      const isNegative = (amount || 0) < 0;
       const sign = isNegative ? '-' : '';
 
-      if (currency === 'INR') {
-        if (formatType === 'compact') {
-          if (absVal >= 10000000) return `${sign}₹${(absVal / 10000000).toFixed(2)} Cr`;
-          if (absVal >= 100000) return `${sign}₹${(absVal / 100000).toFixed(2)} Lakh`;
-          if (absVal >= 1000) return `${sign}₹${(absVal / 1000).toFixed(1)}k`;
-        }
-        return `${sign}₹${new Intl.NumberFormat('en-IN', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(absVal)}`;
-      } else {
-        const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '$';
-        if (formatType === 'compact' && absVal >= 1000) return `${sign}${symbol}${(absVal / 1000).toFixed(1)}k`;
-        return `${sign}${symbol}${new Intl.NumberFormat('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(absVal)}`;
+      if (compact && absVal >= 1000) {
+        return `${sign}₹${(absVal / 1000).toFixed(1)}k`;
       }
+
+      return `${sign}₹${new Intl.NumberFormat('en-IN', {
+        maximumFractionDigits: 0
+      }).format(absVal)}`;
     }
 
     function getDynamicGreeting(name = "Vaibhav") {
@@ -165,7 +143,7 @@
       return `${greeting}, ${name} 👋`;
     }
 
-    // --- INITIAL MULTI-USER DATABASE STORE ---
+    // --- ONLY 2 DEFAULT USERS WITH REALISTIC CLEAN BALANCES ---
     const INITIAL_USERS = [
       {
         id: 101,
@@ -173,10 +151,9 @@
         email: "vaibhav@cashxflow.io",
         password: "password123",
         currency: "INR",
-        tier: "Super Priority Wealth",
-        role: "Founder / Principal Tech Lead",
+        role: "Software Architect",
         avatar: "VS",
-        location: "Bengaluru, India"
+        location: "Bengaluru"
       },
       {
         id: 102,
@@ -184,136 +161,93 @@
         email: "rahul@cashxflow.io",
         password: "password123",
         currency: "INR",
-        tier: "Standard Pro",
-        role: "Senior Software Engineer",
+        role: "Product Designer",
         avatar: "RV",
-        location: "Pune, India"
-      },
-      {
-        id: 103,
-        name: "Priya Nair",
-        email: "priya@cashxflow.io",
-        password: "password123",
-        currency: "INR",
-        tier: "Growth Member",
-        role: "Product Strategy Lead",
-        avatar: "PN",
-        location: "Mumbai, India"
+        location: "Pune"
       }
     ];
 
-    const INITIAL_ACCOUNTS_BY_USER = {
+    const INITIAL_ACCOUNTS = {
       101: [
-        { id: "acc-101-1", name: "HDFC Salary & Primary", institution: "HDFC Bank Ltd", type: "Checking", number: "••• 8924", balance: 385420.50, color: "#10B981", badge: "Primary" },
-        { id: "acc-101-2", name: "ICICI Sweep Deposit (7.1% APY)", institution: "ICICI Bank Ltd", type: "Sweep Deposit", number: "••• 4109", balance: 650000.00, color: "#3B82F6", badge: "Yield" },
-        { id: "acc-101-3", name: "Zerodha Demat Float", institution: "Zerodha Broking Ltd", type: "Demat Float", number: "••• 3371", balance: 214500.00, color: "#8B5CF6", badge: "Demat" },
-        { id: "acc-101-4", name: "SBI Fixed Deposit Vault (7.25%)", institution: "State Bank of India", type: "Fixed Deposit", number: "••• 9120", balance: 480000.00, color: "#F59E0B", badge: "FD" },
-        { id: "acc-101-5", name: "Axis Bank Magnus Black Card", institution: "Axis Bank Cards", type: "Credit Line", number: "••• 7712", balance: -42300.00, limit: 500000, color: "#EC4899", badge: "Magnus" }
+        { id: "acc-101-1", name: "HDFC Salary & Primary", type: "Checking", number: "••• 8924", balance: 65200, color: "#10B981", badge: "Primary" },
+        { id: "acc-101-2", name: "ICICI Savings Vault", type: "Savings", number: "••• 4109", balance: 80000, color: "#3B82F6", badge: "Savings" },
+        { id: "acc-101-3", name: "Axis Magnus Card", type: "Credit Line", number: "••• 7712", balance: -12400, limit: 150000, color: "#EC4899", badge: "Credit" }
       ],
       102: [
-        { id: "acc-102-1", name: "ICICI Salary Account", institution: "ICICI Bank Ltd", type: "Checking", number: "••• 1102", balance: 125000.00, color: "#10B981", badge: "Salary" },
-        { id: "acc-102-2", name: "Groww Mutual Funds Pool", institution: "Groww", type: "Demat", number: "••• 9921", balance: 180000.00, color: "#8B5CF6", badge: "SIP" }
-      ],
-      103: [
-        { id: "acc-103-1", name: "Kotak Privy Salary", institution: "Kotak Mahindra Bank", type: "Checking", number: "••• 7714", balance: 450000.00, color: "#10B981", badge: "Salary" },
-        { id: "acc-103-2", name: "Zerodha Equity Pool", institution: "Zerodha", type: "Demat", number: "••• 5510", balance: 920000.00, color: "#3B82F6", badge: "Equity" }
+        { id: "acc-102-1", name: "ICICI Salary Account", type: "Checking", number: "••• 1102", balance: 48000, color: "#10B981", badge: "Salary" },
+        { id: "acc-102-2", name: "SBI Savings Vault", type: "Savings", number: "••• 9921", balance: 40000, color: "#3B82F6", badge: "Savings" }
       ]
     };
 
-    const INITIAL_TRANSACTIONS_BY_USER = {
+    const INITIAL_TRANSACTIONS = {
       101: [
-        { id: "TXN-9082", date: "Aug 31, 2026", time: "14:15 IST", desc: "Client Architecture Milestone Retainer", merchant: "FinEdge Intelligence Bengaluru", category: "Income", account: "HDFC Salary & Primary", amount: 145000.00, type: "income", status: "Completed", icon: "ShieldCheck", authCode: "NEFT-IN8829104" },
-        { id: "TXN-9081", date: "Aug 28, 2026", time: "10:30 IST", desc: "Monthly Client Tech Advisory Remittance", merchant: "Nexus Capital Mumbai", category: "Income", account: "HDFC Salary & Primary", amount: 140000.00, type: "income", status: "Completed", icon: "CheckCircle", authCode: "RTGS-NX99210" },
-        { id: "TXN-9080", date: "Aug 26, 2026", time: "19:40 IST", desc: "D-Mart Supermarket Monthly Groceries", merchant: "Avenue Supermarts D-Mart", category: "Food & Groceries", account: "Axis Bank Magnus Black Card", amount: -8420.00, type: "expense", status: "Completed", icon: "ShoppingBag", authCode: "POS-DM4491" },
-        { id: "TXN-9079", date: "Aug 25, 2026", time: "09:15 IST", desc: "AWS Cloud Server Infrastructure Invoicing", merchant: "Amazon Web Services India", category: "Bills & Utilities", account: "Axis Bank Magnus Black Card", amount: -1840.00, type: "expense", status: "Completed", icon: "Cloud", authCode: "PG-AWS2209" },
-        { id: "TXN-9078", date: "Aug 24, 2026", time: "18:22 IST", desc: "OpenAI API Platform Developer Compute", merchant: "OpenAI LLC API", category: "Bills & Utilities", account: "Axis Bank Magnus Black Card", amount: -5120.00, type: "expense", status: "Completed", icon: "Cpu", authCode: "PG-OAI771" },
-        { id: "TXN-9077", date: "Aug 22, 2026", time: "00:01 IST", desc: "ICICI Sweep Deposit Monthly Yield", merchant: "ICICI Bank Ltd Interest Batch", category: "Income", account: "ICICI Sweep Deposit (7.1% APY)", amount: 3840.00, type: "income", status: "Completed", icon: "Coins", authCode: "SYS-INT091" },
-        { id: "TXN-9076", date: "Aug 20, 2026", time: "16:45 IST", desc: "Zerodha Automated Index SIP (Nifty 50)", merchant: "Nippon Life India AMC", category: "Investments", account: "HDFC Salary & Primary", amount: -14310.00, type: "expense", status: "Completed", icon: "TrendingUp", authCode: "ACH-ZD8812" },
-        { id: "TXN-9075", date: "Aug 19, 2026", time: "20:30 IST", desc: "Indiranagar Dining & Swiggy Gourmet", merchant: "Toit Brewpub & Swiggy", category: "Food & Groceries", account: "Axis Bank Magnus Black Card", amount: -4750.00, type: "expense", status: "Completed", icon: "Utensils", authCode: "UPI-SWG991" },
-        { id: "TXN-9074", date: "Aug 18, 2026", time: "15:10 IST", desc: "IndiGo Flight Tickets - BLR to BOM Summit", merchant: "InterGlobe Aviation IndiGo", category: "Travel & Commute", account: "Axis Bank Magnus Black Card", amount: -6890.00, type: "expense", status: "Completed", icon: "Plane", authCode: "PG-IND771" },
-        { id: "TXN-9073", date: "Aug 15, 2026", time: "12:00 IST", desc: "Apple Store Mumbai BKC - Workspace Hardware", merchant: "Apple India Retail BKC", category: "Shopping & Lifestyle", account: "Axis Bank Magnus Black Card", amount: -9800.00, type: "expense", status: "Completed", icon: "ShoppingBag", authCode: "POS-APL882" },
-        { id: "TXN-9072", date: "Aug 12, 2026", time: "11:00 IST", desc: "Contract Backend Refactoring Payout", merchant: "DevSquad Studios Bengaluru", category: "Bills & Utilities", account: "HDFC Salary & Primary", amount: -15000.00, type: "expense", status: "Completed", icon: "Users", authCode: "IMPS-DS9910" },
-        { id: "TXN-9071", date: "Aug 10, 2026", time: "14:30 IST", desc: "Tata Power Electricity Utility Bill", merchant: "Tata Power Company Ltd", category: "Bills & Utilities", account: "HDFC Salary & Primary", amount: -3450.00, type: "expense", status: "Completed", icon: "Zap", authCode: "BBPS-TP3319" }
+        { id: "TXN-101", date: "Aug 31, 2026", desc: "Monthly Salary Remittance", merchant: "TechCorp Global", category: "Income", account: "HDFC Salary & Primary", amount: 85000, type: "income", status: "Completed" },
+        { id: "TXN-102", date: "Aug 28, 2026", desc: "Apartment Rent", merchant: "Landlord Rent", category: "Bills & Utilities", account: "HDFC Salary & Primary", amount: -14000, type: "expense", status: "Completed" },
+        { id: "TXN-103", date: "Aug 25, 2026", desc: "D-Mart Supermarket Groceries", merchant: "D-Mart", category: "Food & Groceries", account: "HDFC Salary & Primary", amount: -4200, type: "expense", status: "Completed" },
+        { id: "TXN-104", date: "Aug 22, 2026", desc: "Nifty 50 Index Fund SIP", merchant: "Nippon Life AMC", category: "Investments", account: "HDFC Salary & Primary", amount: -5000, type: "expense", status: "Completed" },
+        { id: "TXN-105", date: "Aug 19, 2026", desc: "Electricity & Wi-Fi Bills", merchant: "Tata Power & Jio", category: "Bills & Utilities", account: "Axis Magnus Card", amount: -2400, type: "expense", status: "Completed" },
+        { id: "TXN-106", date: "Aug 15, 2026", desc: "Weekend Dining & Swiggy", merchant: "Swiggy Gourmet", category: "Food & Groceries", account: "Axis Magnus Card", amount: -1800, type: "expense", status: "Completed" },
+        { id: "TXN-107", date: "Aug 10, 2026", desc: "Zara Clothing & Accessories", merchant: "Zara India", category: "Shopping & Lifestyle", account: "Axis Magnus Card", amount: -1000, type: "expense", status: "Completed" }
       ],
       102: [
-        { id: "TXN-8001", date: "Aug 31, 2026", time: "10:00 IST", desc: "Senior Developer Salary", merchant: "Infosys Technologies Ltd", category: "Income", account: "ICICI Salary Account", amount: 120000.00, type: "income", status: "Completed", icon: "CheckCircle" },
-        { id: "TXN-8002", date: "Aug 29, 2026", time: "11:30 IST", desc: "Apartment Rent Baner Pune", merchant: "Landlord Rent Payment", category: "Bills & Utilities", account: "ICICI Salary Account", amount: -22000.00, type: "expense", status: "Completed", icon: "Zap" },
-        { id: "TXN-8003", date: "Aug 24, 2026", time: "16:00 IST", desc: "Groww Parag Parikh Flexi SIP", merchant: "Groww Mutual Funds", category: "Investments", account: "ICICI Salary Account", amount: -12000.00, type: "expense", status: "Completed", icon: "TrendingUp" },
-        { id: "TXN-8004", date: "Aug 22, 2026", time: "18:20 IST", desc: "Blinkit & Nature's Basket Groceries", merchant: "Blinkit Commerce", category: "Food & Groceries", account: "ICICI Salary Account", amount: -4200.00, type: "expense", status: "Completed", icon: "ShoppingBag" },
-        { id: "TXN-8005", date: "Aug 15, 2026", time: "14:00 IST", desc: "Amazon Prime Day Electronics", merchant: "Amazon India", category: "Shopping & Lifestyle", account: "ICICI Salary Account", amount: -3800.00, type: "expense", status: "Completed", icon: "ShoppingBag" }
-      ],
-      103: [
-        { id: "TXN-7001", date: "Aug 31, 2026", time: "12:00 IST", desc: "Product Strategy Retainer", merchant: "Nexus Growth Studio", category: "Income", account: "Kotak Privy Salary", amount: 450000.00, type: "income", status: "Completed", icon: "CheckCircle" },
-        { id: "TXN-7002", date: "Aug 28, 2026", time: "15:00 IST", desc: "Bandra Sea-Face Loft Lease", merchant: "Hiranandani Realty", category: "Bills & Utilities", account: "Kotak Privy Salary", amount: -75000.00, type: "expense", status: "Completed", icon: "Zap" },
-        { id: "TXN-7003", date: "Aug 25, 2026", time: "18:00 IST", desc: "Zerodha Bluechip Portfolio SIP", merchant: "Zerodha Broking", category: "Investments", account: "Kotak Privy Salary", amount: -35000.00, type: "expense", status: "Completed", icon: "TrendingUp" }
+        { id: "TXN-201", date: "Aug 31, 2026", desc: "Monthly Design Lead Salary", merchant: "Nexus Studio", category: "Income", account: "ICICI Salary Account", amount: 65000, type: "income", status: "Completed" },
+        { id: "TXN-202", date: "Aug 28, 2026", desc: "Baner Flat Rent", merchant: "Housing Rent", category: "Bills & Utilities", account: "ICICI Salary Account", amount: -12000, type: "expense", status: "Completed" },
+        { id: "TXN-203", date: "Aug 24, 2026", desc: "Mutual Fund Monthly SIP", merchant: "Groww Funds", category: "Investments", account: "ICICI Salary Account", amount: -4000, type: "expense", status: "Completed" },
+        { id: "TXN-204", date: "Aug 20, 2026", desc: "Groceries & Supermarket", merchant: "Nature's Basket", category: "Food & Groceries", account: "ICICI Salary Account", amount: -3500, type: "expense", status: "Completed" },
+        { id: "TXN-205", date: "Aug 15, 2026", desc: "Mobile & Broadband Bill", merchant: "Airtel India", category: "Bills & Utilities", account: "ICICI Salary Account", amount: -1500, type: "expense", status: "Completed" },
+        { id: "TXN-206", date: "Aug 12, 2026", desc: "Amazon Essentials", merchant: "Amazon India", category: "Shopping & Lifestyle", account: "ICICI Salary Account", amount: -1500, type: "expense", status: "Completed" }
       ]
     };
 
-    const INITIAL_HOLDINGS_BY_USER = {
+    const INITIAL_HOLDINGS = {
       101: [
-        { symbol: "NIFTYBEES", name: "Nippon India Nifty 50 ETF", shares: 1850, avg: 242.10, price: 282.40, value: 522440.00, pnl: 74555.00, pnlPct: 16.65, type: "ETF" },
-        { symbol: "RELIANCE", name: "Reliance Industries Ltd", shares: 140, avg: 2650.00, price: 2980.00, value: 417200.00, pnl: 46200.00, pnlPct: 12.45, type: "Equity" },
-        { symbol: "INFY", name: "Infosys Limited", shares: 250, avg: 1440.00, price: 1845.50, value: 461375.00, pnl: 101375.00, pnlPct: 28.16, type: "Equity" },
-        { symbol: "HDFCBANK", name: "HDFC Bank Limited", shares: 220, avg: 1520.00, price: 1648.00, value: 362560.00, pnl: 28160.00, pnlPct: 8.42, type: "Equity" },
-        { symbol: "SGB-2029", name: "Sovereign Gold Bonds 2029", shares: 60, avg: 5600.00, price: 7250.00, value: 435000.00, pnl: 99000.00, pnlPct: 29.46, type: "Gold Bond" },
-        { symbol: "PPFAS-FLEXI", name: "Parag Parikh Flexi Cap Fund", shares: 9800, avg: 54.20, price: 68.90, value: 675220.00, pnl: 144060.00, pnlPct: 27.12, type: "Mutual Fund" },
-        { symbol: "BTC", name: "Bitcoin (Cold Stored)", shares: 0.05, avg: 4800000.00, price: 5420000.00, value: 271000.00, pnl: 31000.00, pnlPct: 12.92, type: "Crypto" }
+        { symbol: "NIFTYBEES", name: "Nippon India Nifty 50 ETF", shares: 350, avg: 250.00, price: 271.40, value: 95000, pnl: 7490, pnlPct: 8.56, type: "ETF" },
+        { symbol: "RELIANCE", name: "Reliance Industries Ltd", shares: 22, avg: 2750.00, price: 2954.00, value: 65000, pnl: 4488, pnlPct: 7.41, type: "Equity" },
+        { symbol: "SGB-2029", name: "Sovereign Gold Bonds", shares: 11, avg: 6200.00, price: 7272.00, value: 80000, pnl: 11792, pnlPct: 17.29, type: "Gold Bond" }
       ],
       102: [
-        { symbol: "PPFAS-FLEXI", name: "Parag Parikh Flexi Cap Fund", shares: 2800, avg: 54.20, price: 68.90, value: 192920.00, pnl: 41160.00, pnlPct: 27.12, type: "Mutual Fund" },
-        { symbol: "TCS", name: "Tata Consultancy Services", shares: 45, avg: 3600.00, price: 4120.00, value: 185400.00, pnl: 23400.00, pnlPct: 14.44, type: "Equity" }
-      ],
-      103: [
-        { symbol: "NIFTYBEES", name: "Nippon India Nifty 50 ETF", shares: 3200, avg: 242.10, price: 282.40, value: 903680.00, pnl: 128960.00, pnlPct: 16.65, type: "ETF" },
-        { symbol: "RELIANCE", name: "Reliance Industries Ltd", shares: 200, avg: 2650.00, price: 2980.00, value: 596000.00, pnl: 66000.00, pnlPct: 12.45, type: "Equity" }
+        { symbol: "PPFAS-FLEXI", name: "Parag Parikh Flexi Cap", shares: 750, avg: 58.00, price: 66.60, value: 50000, pnl: 6450, pnlPct: 14.82, type: "Mutual Fund" },
+        { symbol: "TCS", name: "Tata Consultancy Services", shares: 10, avg: 3700.00, price: 4000.00, value: 40000, pnl: 3000, pnlPct: 8.11, type: "Equity" }
       ]
     };
 
-    // --- MAIN REACT MULTI-USER APPLICATION ---
-    function CashXFlowMultiUserApp() {
-      // Auth State
-      const [currentUser, setCurrentUser] = useState(null); // null = Auth Screen
+    // --- MAIN MULTI-USER DASHBOARD APP ---
+    function CashXFlowApp() {
+      const [currentUser, setCurrentUser] = useState(null); // null = Login screen
       const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
-      const [showOnboarding, setShowOnboarding] = useState(false);
-      const [onboardingStep, setOnboardingStep] = useState(1);
+      const [showPassword, setShowPassword] = useState(false);
 
-      // Multi-User Database States
+      // Data Stores (2 users + dynamic users)
       const [users, setUsers] = useState(INITIAL_USERS);
-      const [accountsByUser, setAccountsByUser] = useState(INITIAL_ACCOUNTS_BY_USER);
-      const [transactionsByUser, setTransactionsByUser] = useState(INITIAL_TRANSACTIONS_BY_USER);
-      const [holdingsByUser, setHoldingsByUser] = useState(INITIAL_HOLDINGS_BY_USER);
+      const [accountsByUser, setAccountsByUser] = useState(INITIAL_ACCOUNTS);
+      const [transactionsByUser, setTransactionsByUser] = useState(INITIAL_TRANSACTIONS);
+      const [holdingsByUser, setHoldingsByUser] = useState(INITIAL_HOLDINGS);
 
-      // Active Dashboard States
-      const [currentView, setCurrentView] = useState('dashboard');
+      // Workspace States
+      const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'analytics' | 'investments' | 'transactions'
       const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
       const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
       const [selectedAccount, setSelectedAccount] = useState('all');
-      const [cashFlowRange, setCashFlowRange] = useState('6M');
-      const [chartType, setChartType] = useState('area');
       const [userSwitcherOpen, setUserSwitcherOpen] = useState(false);
 
       // Modals
-      const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+      const [isAddAccountModalOpen, setIsAddAccountModalOpen] = useState(false);
       const [isAddTxnModalOpen, setIsAddTxnModalOpen] = useState(false);
-      const [isCsvImportModalOpen, setIsCsvImportModalOpen] = useState(false);
       const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
-      const [isAiChatOpen, setIsAiChatOpen] = useState(false);
-      const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-      const [selectedTxnForModal, setSelectedTxnForModal] = useState(null);
+      const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+      const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
       const [toastMessage, setToastMessage] = useState(null);
-
-      // AI Chat State
-      const [aiMessages, setAiMessages] = useState([
-        { sender: 'ai', text: 'Hello! I am your CASHXFLOW Smart Financial Copilot. Ask me anything about your current spending, savings rate, or where you can optimize cash flow.' }
-      ]);
-      const [aiInput, setAiInput] = useState('');
 
       const showToast = (msg) => {
         setToastMessage(msg);
-        setTimeout(() => setToastMessage(null), 3500);
+        setTimeout(() => setToastMessage(null), 3200);
       };
 
-      // Active User's Data Slice
+      useEffect(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      // Active User Slice
       const activeAccounts = useMemo(() => {
         return currentUser ? (accountsByUser[currentUser.id] || []) : [];
       }, [currentUser, accountsByUser]);
@@ -326,13 +260,13 @@
         return currentUser ? (holdingsByUser[currentUser.id] || []) : [];
       }, [currentUser, holdingsByUser]);
 
-      // Dynamic Financial Calculations for the Logged-In User
+      // Computed Financial Metrics
       const totalBalance = useMemo(() => {
         return activeAccounts.reduce((sum, a) => sum + a.balance, 0);
       }, [activeAccounts]);
 
       const totalInvestments = useMemo(() => {
-        return activeHoldings.reduce((sum, h) => sum + h.value, 0);
+        return activeHoldings.reduce((sum, h) => sum + (h.value || (h.shares * h.price)), 0);
       }, [activeHoldings]);
 
       const netWorth = useMemo(() => {
@@ -341,20 +275,20 @@
 
       const monthlyIncome = useMemo(() => {
         return activeTransactions
-          .filter(t => t.type === 'income' && t.status === 'Completed')
+          .filter(t => t.type === 'income')
           .reduce((sum, t) => sum + t.amount, 0);
       }, [activeTransactions]);
 
       const monthlyExpenses = useMemo(() => {
         return activeTransactions
-          .filter(t => t.type === 'expense' && t.status === 'Completed')
+          .filter(t => t.type === 'expense')
           .reduce((sum, t) => sum + Math.abs(t.amount), 0);
       }, [activeTransactions]);
 
       const netCashFlow = monthlyIncome - monthlyExpenses;
-      const savingsRate = monthlyIncome > 0 ? +((netCashFlow / monthlyIncome) * 100).toFixed(1) : 0;
+      const savingsRate = monthlyIncome > 0 ? +((netCashFlow / monthlyIncome) * 100).toFixed(0) : 0;
 
-      // Dynamic Category Breakdown from Real Transactions
+      // Dynamic Category Breakdown
       const spendingCategories = useMemo(() => {
         const catMap = {};
         const colors = ["#3B82F6", "#10B981", "#8B5CF6", "#06B6D4", "#F59E0B", "#EC4899", "#64748B"];
@@ -367,7 +301,7 @@
         const totalExpense = monthlyExpenses || 1;
         return Object.keys(catMap).map(catName => {
           const amt = catMap[catName];
-          const pct = +((amt / totalExpense) * 100).toFixed(1);
+          const pct = +((amt / totalExpense) * 100).toFixed(0);
           const item = {
             name: catName,
             amount: amt,
@@ -379,120 +313,24 @@
         }).sort((a, b) => b.amount - a.amount);
       }, [activeTransactions, monthlyExpenses]);
 
-      // Dynamic Financial Health Score (0 - 100)
-      const healthScore = useMemo(() => {
-        let score = 70;
-        if (savingsRate >= 50) score += 15;
-        else if (savingsRate >= 30) score += 10;
-        else if (savingsRate < 10) score -= 15;
-
-        if (totalBalance > monthlyExpenses * 6) score += 10;
-        if (totalInvestments > 0) score += 5;
-        return Math.min(99, Math.max(42, score));
-      }, [savingsRate, totalBalance, monthlyExpenses, totalInvestments]);
-
-      // Auto initialize Lucide icons
-      useEffect(() => {
-        if (window.lucide) window.lucide.createIcons();
-      });
-
-      // Quick switch user
-      const handleSwitchUser = (userId) => {
-        const target = users.find(u => u.id === userId);
-        if (target) {
-          setCurrentUser(target);
-          setSelectedAccount('all');
-          setUserSwitcherOpen(false);
-          showToast(`Switched workspace to ${target.name}`);
-        }
-      };
-
-      // Sign In Action
-      const handleLogin = (email, password) => {
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-        if (user) {
-          setCurrentUser(user);
-          showToast(`Welcome back, ${user.name.split(' ')[0]}!`);
-        } else {
-          alert("Invalid credentials! Try vaibhav@cashxflow.io / password123, or click 'Explore Demo'.");
-        }
-      };
-
-      // Sign Up Action
-      const handleSignUp = (name, email, password, currency) => {
-        if (!name || !email || !password) {
-          alert("Please fill in all fields.");
-          return;
-        }
-        const newId = 100 + users.length + 1;
-        const newUser = {
-          id: newId,
-          name,
-          email,
-          password,
-          currency: currency || 'INR',
-          tier: 'Pro Member',
-          role: 'Personal Finance Manager',
-          avatar: name.slice(0, 2).toUpperCase(),
-          location: 'India'
+      // Add New Bank Account Action
+      const handleAddAccount = (newAcc) => {
+        if (!currentUser) return;
+        const fullAcc = {
+          id: `acc-${currentUser.id}-${Date.now()}`,
+          ...newAcc
         };
 
-        setUsers([...users, newUser]);
-        setAccountsByUser({
-          ...accountsByUser,
-          [newId]: [
-            { id: `acc-${newId}-1`, name: "Primary Savings Account", institution: "Bank of India", type: "Savings", number: "••• 1001", balance: 50000.00, color: "#10B981", badge: "Primary" }
-          ]
-        });
-        setTransactionsByUser({
-          ...transactionsByUser,
-          [newId]: []
-        });
-        setHoldingsByUser({
-          ...holdingsByUser,
-          [newId]: []
-        });
-
-        setCurrentUser(newUser);
-        setShowOnboarding(true);
-        setOnboardingStep(1);
-        showToast(`Account created for ${name}!`);
-      };
-
-      // Handle CSV Import
-      const handleImportCSVData = (parsedRows) => {
-        if (!currentUser) return;
-        const newTxns = parsedRows.map((row, idx) => {
-          const rawAmt = parseFloat(row.Amount || row.amount || row.AMOUNT || 0);
-          const rawType = (row.Type || row.type || (rawAmt >= 0 ? 'income' : 'expense')).toLowerCase();
-          const amt = rawType === 'income' ? Math.abs(rawAmt) : -Math.abs(rawAmt);
-
-          return {
-            id: `CSV-${Math.floor(1000 + Math.random() * 9000)}-${idx}`,
-            date: row.Date || row.date || "Aug 31, 2026",
-            time: "Imported",
-            desc: row.Description || row.description || row.desc || "Imported Settlement",
-            merchant: row.Merchant || row.merchant || "CSV Import",
-            category: row.Category || row.category || (rawType === 'income' ? 'Income' : 'Other & Health'),
-            account: row.Account || row.account || activeAccounts[0]?.name || "Primary Account",
-            amount: amt,
-            type: rawType,
-            status: "Completed",
-            icon: rawType === 'income' ? 'CheckCircle' : 'CreditCard',
-            authCode: `CSV-${Math.floor(10000 + Math.random() * 90000)}`
-          };
-        });
-
-        setTransactionsByUser(prev => ({
+        setAccountsByUser(prev => ({
           ...prev,
-          [currentUser.id]: [...newTxns, ...(prev[currentUser.id] || [])]
+          [currentUser.id]: [...(prev[currentUser.id] || []), fullAcc]
         }));
 
-        setIsCsvImportModalOpen(false);
-        showToast(`Successfully imported ${newTxns.length} transactions into ${currentUser.name}'s ledger!`);
+        setIsAddAccountModalOpen(false);
+        showToast(`Added ${newAcc.name} to ${currentUser.name}'s accounts!`);
       };
 
-      // Add New Transaction
+      // Add Transaction Action
       const handleAddTransaction = (newTxn) => {
         if (!currentUser) return;
         setTransactionsByUser(prev => ({
@@ -508,54 +346,87 @@
             return acc;
           })
         }));
-        showToast(`Transaction added to ${currentUser.name}'s records!`);
         setIsAddTxnModalOpen(false);
+        showToast("Transaction saved to ledger!");
       };
 
-      // AI Chat Question Submit
-      const handleSendAiMessage = (e) => {
-        e.preventDefault();
-        if (!aiInput.trim()) return;
+      // Execute Trade Action (Buy/Sell in Investments)
+      const handleTrade = ({ symbol, action, shares, price, total }) => {
+        const cost = parseFloat(total);
+        if (!currentUser) return;
 
-        const userMsg = aiInput;
-        setAiMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
-        setAiInput('');
-
-        // Generate context-aware AI response based on the active user's actual numbers
-        setTimeout(() => {
-          let reply = "";
-          const lower = userMsg.toLowerCase();
-          if (lower.includes('highest') || lower.includes('spend') || lower.includes('where')) {
-            const topCat = spendingCategories[0];
-            if (topCat) {
-              reply = `Based on your recent transactions, your highest spending category is ${topCat.name} at ${formatMoney(topCat.amount, currentUser?.currency)}, representing ${topCat.percentage}% of your total outflows.`;
+        if (action === 'BUY') {
+          // Deduct from first checking account
+          setAccountsByUser(prev => ({
+            ...prev,
+            [currentUser.id]: prev[currentUser.id].map((acc, idx) => idx === 0 ? { ...acc, balance: acc.balance - cost } : acc)
+          }));
+          setHoldingsByUser(prev => {
+            const list = prev[currentUser.id] || [];
+            const exists = list.find(h => h.symbol === symbol);
+            if (exists) {
+              const newShares = exists.shares + parseFloat(shares);
+              const newValue = newShares * price;
+              return {
+                ...prev,
+                [currentUser.id]: list.map(h => h.symbol === symbol ? { ...h, shares: newShares, value: newValue } : h)
+              };
             } else {
-              reply = `You currently have ${formatMoney(monthlyExpenses, currentUser?.currency)} in total monthly expenses.`;
+              return {
+                ...prev,
+                [currentUser.id]: [...list, { symbol, name: symbol, shares: parseFloat(shares), avg: price, price, value: cost, pnl: 0, pnlPct: 0, type: 'Equity' }]
+              };
             }
-          } else if (lower.includes('surplus') || lower.includes('save') || lower.includes('rate')) {
-            reply = `Your monthly surplus is +${formatMoney(netCashFlow, currentUser?.currency)} with a ${savingsRate}% savings rate. You have an emergency cash runway of ${(totalBalance / (monthlyExpenses || 1)).toFixed(1)} months.`;
-          } else {
-            reply = `Hello ${currentUser?.name}! Your net worth is currently ${formatMoney(netWorth, currentUser?.currency)} with ${activeAccounts.length} active accounts and a health score of ${healthScore}/100.`;
-          }
-          setAiMessages(prev => [...prev, { sender: 'ai', text: reply }]);
-        }, 600);
+          });
+          showToast(`Bought ${shares} units of ${symbol} for ${formatMoney(cost)}!`);
+        } else {
+          setAccountsByUser(prev => ({
+            ...prev,
+            [currentUser.id]: prev[currentUser.id].map((acc, idx) => idx === 0 ? { ...acc, balance: acc.balance + cost } : acc)
+          }));
+          setHoldingsByUser(prev => ({
+            ...prev,
+            [currentUser.id]: (prev[currentUser.id] || []).map(h => {
+              if (h.symbol === symbol) {
+                const newShares = Math.max(0, h.shares - parseFloat(shares));
+                return { ...h, shares: newShares, value: newShares * price };
+              }
+              return h;
+            })
+          }));
+          showToast(`Sold ${shares} units of ${symbol} for ${formatMoney(cost)}!`);
+        }
+        setIsTradeModalOpen(false);
       };
 
-      // --- RENDER AUTHENTICATION VIEW IF NOT LOGGED IN ---
+      // Switch Profile
+      const handleSwitchUser = (userId) => {
+        const u = users.find(x => x.id === userId);
+        if (u) {
+          setCurrentUser(u);
+          setSelectedAccount('all');
+          setUserSwitcherOpen(false);
+          showToast(`Switched to ${u.name}`);
+        }
+      };
+
+      // -------------------------------------------------------------
+      // 1. AUTH SCREEN (With Eye Password Toggle & 2 Demo Users)
+      // -------------------------------------------------------------
       if (!currentUser) {
         return (
           <div className="min-h-screen w-screen bg-[#0B0F14] bg-mesh-glow flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-md space-y-6">
-              {/* Brand Logo Header */}
+              {/* Logo Header */}
               <div className="text-center space-y-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-xl shadow-emerald-950/60 text-slate-950 font-black text-2xl">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-950/60 text-slate-950 font-black text-2xl">
                   ₹
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                   CASH<span className="text-emerald-400">X</span>FLOW
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-400">
-                  Smart Cash Flow & Multi-User Treasury Management
+                  Smart Multi-User Cash Flow Management
                 </p>
               </div>
 
@@ -581,25 +452,129 @@
                 </div>
 
                 {authMode === 'login' ? (
-                  <LoginForm onLogin={handleLogin} onExploreDemo={() => handleSwitchUser(101)} />
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSwitchUser(101);
+                    }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Address</label>
+                      <input
+                        type="email"
+                        defaultValue="vaibhav@cashxflow.io"
+                        required
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* Password with Eye View Toggle Button */}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">Password</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          defaultValue="password123"
+                          required
+                          className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl pl-3 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                          title={showPassword ? "Hide Password" : "Show Password"}
+                        >
+                          <i data-lucide={showPassword ? "eye-off" : "eye"} className="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-colors"
+                    >
+                      Sign In to CASHXFLOW
+                    </button>
+                  </form>
                 ) : (
-                  <SignUpForm onSignUp={handleSignUp} />
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const name = e.target.name.value;
+                      const email = e.target.email.value;
+                      const newId = 100 + users.length + 1;
+                      const newUser = { id: newId, name, email, password: "password123", currency: "INR", role: "Personal Account", avatar: name.slice(0,2).toUpperCase(), location: "India" };
+                      setUsers([...users, newUser]);
+                      setAccountsByUser({ ...accountsByUser, [newId]: [{ id: `acc-${newId}-1`, name: "Primary Savings", type: "Savings", number: "••• 1001", balance: 25000, color: "#10B981", badge: "Primary" }] });
+                      setTransactionsByUser({ ...transactionsByUser, [newId]: [] });
+                      setHoldingsByUser({ ...holdingsByUser, [newId]: [] });
+                      setCurrentUser(newUser);
+                      showToast(`Welcome, ${name}!`);
+                    }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">Full Name</label>
+                      <input
+                        name="name"
+                        type="text"
+                        required
+                        placeholder="e.g. Ankit Sharma"
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Address</label>
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="name@domain.com"
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-300 block mb-1.5">Password</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          placeholder="••••••••"
+                          className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl pl-3 pr-10 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                        >
+                          <i data-lucide={showPassword ? "eye-off" : "eye"} className="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-colors"
+                    >
+                      Create Financial Account
+                    </button>
+                  </form>
                 )}
 
-                {/* Quick Switch Profiles Bar */}
+                {/* 2 User Accounts Quick Switch */}
                 <div className="pt-4 border-t border-[#1E2633]/60 space-y-2">
                   <span className="text-[10px] font-mono uppercase text-slate-400 block text-center">
-                    Quick-Switch Demo Profiles:
+                    Select User Profile (2 Active):
                   </span>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    {users.map(u => (
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {users.slice(0, 2).map(u => (
                       <button
                         key={u.id}
                         onClick={() => handleSwitchUser(u.id)}
-                        className="p-2 rounded-xl bg-[#0B0F14] border border-[#1E2633] hover:border-emerald-500/50 hover:bg-[#161D29] text-center transition-all group"
+                        className="p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633] hover:border-emerald-500/50 hover:bg-[#161D29] text-center transition-all group"
                       >
-                        <span className="font-bold text-slate-200 block truncate group-hover:text-emerald-400">{u.name.split(' ')[0]}</span>
-                        <span className="text-[9px] font-mono text-slate-400 truncate block">{u.role.split(' ')[0]}</span>
+                        <span className="font-bold text-slate-200 block truncate group-hover:text-emerald-400">{u.name}</span>
+                        <span className="text-[10px] font-mono text-slate-400 truncate block">{u.role}</span>
                       </button>
                     ))}
                   </div>
@@ -610,11 +585,13 @@
         );
       }
 
-      // --- RENDER LOGGED-IN DASHBOARD VIEW ---
+      // -------------------------------------------------------------
+      // 2. MAIN LOGGED-IN WORKSPACE
+      // -------------------------------------------------------------
       return (
         <div className="flex h-screen w-screen overflow-hidden bg-[#0B0F14] text-slate-100 bg-mesh-glow">
           {toastMessage && (
-            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#11161F]/95 border border-emerald-500/30 text-slate-100 px-4 py-3 rounded-xl shadow-2xl shadow-black/80 backdrop-blur-md animate-fade-in border-l-4 border-l-emerald-500">
+            <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#11161F]/95 border border-emerald-500/30 text-slate-100 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md animate-fade-in border-l-4 border-l-emerald-500">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                 <i data-lucide="check" className="w-4 h-4"></i>
               </span>
@@ -622,9 +599,9 @@
             </div>
           )}
 
-          {/* SIDEBAR NAVIGATION */}
+          {/* SIDEBAR */}
           <aside className={`
-            fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[#1E2633] bg-[#0E131A]/95 backdrop-blur-xl transition-all duration-300 ease-in-out
+            fixed inset-y-0 left-0 z-40 flex flex-col border-r border-[#1E2633] bg-[#0E131A]/95 backdrop-blur-xl transition-all duration-300
             lg:static lg:translate-x-0
             ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             ${sidebarCollapsed ? 'w-20' : 'w-64'}
@@ -632,19 +609,16 @@
             {/* Header Brand */}
             <div className="flex h-16 items-center justify-between px-5 border-b border-[#1E2633]/80">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 shadow-md shadow-emerald-900/40 text-slate-950 font-black text-lg tracking-tighter">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 shadow-md text-slate-950 font-black text-lg">
                   ₹
                 </div>
                 {!sidebarCollapsed && (
                   <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-base tracking-tight text-white font-sans">CASH<span className="text-emerald-400">X</span>FLOW</span>
-                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                        PRO
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-medium tracking-tight truncate max-w-[150px]">
-                      {currentUser.name}'s Workspace
+                    <span className="font-extrabold text-base tracking-tight text-white font-sans">
+                      CASH<span className="text-emerald-400">X</span>FLOW
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium truncate max-w-[140px]">
+                      {currentUser.name}
                     </span>
                   </div>
                 )}
@@ -652,18 +626,18 @@
 
               <button 
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md border border-[#1E2633] text-slate-400 hover:text-white hover:bg-[#161D29] transition-colors"
+                className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md border border-[#1E2633] text-slate-400 hover:text-white"
               >
                 <i data-lucide={sidebarCollapsed ? "chevron-right" : "chevron-left"} className="w-4 h-4"></i>
               </button>
             </div>
 
-            {/* Nav Menu */}
+            {/* Navigation Menu Links */}
             <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
               <div>
                 {!sidebarCollapsed && (
                   <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-                    Navigation
+                    Menu
                   </p>
                 )}
                 <nav className="space-y-1">
@@ -675,31 +649,6 @@
                   >
                     <i data-lucide="layout-dashboard" className="w-4 h-4"></i>
                     {!sidebarCollapsed && <span className="flex-1 text-left">Dashboard</span>}
-                  </button>
-
-                  <button
-                    onClick={() => setCurrentView('transactions')}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                      currentView === 'transactions' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:text-white hover:bg-[#161D29]'
-                    }`}
-                  >
-                    <i data-lucide="arrow-left-right" className="w-4 h-4"></i>
-                    {!sidebarCollapsed && (
-                      <>
-                        <span className="flex-1 text-left">Transactions</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300">
-                          {activeTransactions.length}
-                        </span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => setIsCsvImportModalOpen(true)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
-                  >
-                    <i data-lucide="upload" className="w-4 h-4"></i>
-                    {!sidebarCollapsed && <span className="flex-1 text-left font-bold">Import CSV</span>}
                   </button>
 
                   <button
@@ -719,25 +668,55 @@
                     }`}
                   >
                     <i data-lucide="pie-chart" className="w-4 h-4"></i>
-                    {!sidebarCollapsed && <span className="flex-1 text-left">Investments</span>}
+                    {!sidebarCollapsed && (
+                      <>
+                        <span className="flex-1 text-left">Investments</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-emerald-500/10 text-emerald-400">
+                          {activeHoldings.length}
+                        </span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentView('transactions')}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      currentView === 'transactions' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-slate-400 hover:text-white hover:bg-[#161D29]'
+                    }`}
+                  >
+                    <i data-lucide="arrow-left-right" className="w-4 h-4"></i>
+                    {!sidebarCollapsed && (
+                      <>
+                        <span className="flex-1 text-left">Transactions</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-slate-800 text-slate-300">
+                          {activeTransactions.length}
+                        </span>
+                      </>
+                    )}
                   </button>
                 </nav>
               </div>
 
-              {/* User Accounts */}
+              {/* Linked Accounts with + Add Account Button */}
               {!sidebarCollapsed && (
                 <div className="pt-2 border-t border-[#1E2633]/60">
                   <div className="flex items-center justify-between px-3 mb-2.5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
-                      User Accounts ({activeAccounts.length})
+                      Accounts ({activeAccounts.length})
                     </p>
+                    <button
+                      onClick={() => setIsAddAccountModalOpen(true)}
+                      className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
+                    >
+                      <i data-lucide="plus" className="w-3 h-3"></i> Add Account
+                    </button>
                   </div>
                   <div className="space-y-1.5">
                     {activeAccounts.map(acc => (
                       <div 
                         key={acc.id}
                         onClick={() => setSelectedAccount(selectedAccount === acc.id ? 'all' : acc.id)}
-                        className={`group flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer ${
+                        className={`flex items-center justify-between p-2.5 rounded-lg border transition-all cursor-pointer ${
                           selectedAccount === acc.id 
                             ? 'bg-[#18202C] border-emerald-500/40' 
                             : 'bg-[#11161F]/60 border-transparent hover:border-[#1E2633] hover:bg-[#161D29]'
@@ -748,7 +727,7 @@
                           <span className="text-xs font-medium text-slate-200 truncate">{acc.name}</span>
                         </div>
                         <span className="text-xs font-mono font-semibold text-slate-300">
-                          {formatMoney(acc.balance, currentUser.currency, 'compact')}
+                          {formatMoney(acc.balance)}
                         </span>
                       </div>
                     ))}
@@ -757,19 +736,19 @@
               )}
             </div>
 
-            {/* Profile Switcher Footer */}
+            {/* Profile Footer with 2 Users Switcher */}
             <div className="p-3 border-t border-[#1E2633]/80 bg-[#0B0F14]/60">
               <div 
                 className="flex items-center gap-3 p-2 rounded-xl bg-[#11161F] border border-[#1E2633] hover:border-slate-700 transition-colors cursor-pointer"
                 onClick={() => setUserSwitcherOpen(!userSwitcherOpen)}
               >
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center font-bold text-xs text-emerald-400">
-                  {currentUser.avatar || currentUser.name.slice(0, 2).toUpperCase()}
+                  {currentUser.avatar}
                 </div>
                 {!sidebarCollapsed && (
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-xs font-semibold text-white truncate">{currentUser.name}</span>
-                    <span className="text-[10px] text-emerald-400 font-mono truncate">Active User</span>
+                    <span className="text-[10px] text-emerald-400 font-mono truncate">Switch Account</span>
                   </div>
                 )}
                 {!sidebarCollapsed && <i data-lucide="chevron-up" className="w-4 h-4 text-slate-400"></i>}
@@ -777,8 +756,8 @@
 
               {userSwitcherOpen && !sidebarCollapsed && (
                 <div className="mt-2 p-2 rounded-xl bg-[#11161F] border border-[#1E2633] space-y-1 shadow-2xl animate-fade-in">
-                  <p className="text-[9px] font-mono text-slate-400 uppercase px-2 py-1">Switch Account:</p>
-                  {users.map(u => (
+                  <p className="text-[9px] font-mono text-slate-400 uppercase px-2 py-1">Choose Profile:</p>
+                  {users.slice(0, 2).map(u => (
                     <button
                       key={u.id}
                       onClick={() => handleSwitchUser(u.id)}
@@ -787,7 +766,7 @@
                       }`}
                     >
                       <span className="truncate">{u.name}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{u.currency}</span>
+                      <span className="text-[10px] font-mono text-slate-400">{u.role.split(' ')[0]}</span>
                     </button>
                   ))}
                   <button
@@ -802,7 +781,7 @@
             </div>
           </aside>
 
-          {/* MAIN WORKSPACE */}
+          {/* MAIN CONTAINER */}
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {/* Top Bar */}
             <header className="h-16 border-b border-[#1E2633] bg-[#0E131A]/80 backdrop-blur-md px-4 lg:px-8 flex items-center justify-between gap-4 z-30">
@@ -814,92 +793,73 @@
                   <i data-lucide="menu" className="w-5 h-5"></i>
                 </button>
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-bold text-sm tracking-tight">{currentUser.name}'s Dashboard</span>
+                  <span className="text-white font-bold text-sm tracking-tight">{currentUser.name}</span>
                   <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                    {currentUser.currency}
+                    ₹ INR
                   </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* CSV Import Button */}
                 <button
-                  onClick={() => setIsCsvImportModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18202C] hover:bg-[#202B3B] border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-semibold transition-all shadow-sm"
+                  onClick={() => setIsAddAccountModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] text-xs font-semibold text-slate-200 rounded-lg"
                 >
-                  <i data-lucide="upload" className="w-3.5 h-3.5"></i>
-                  <span className="hidden sm:inline">Import CSV</span>
+                  <i data-lucide="plus-circle" className="w-3.5 h-3.5 text-blue-400"></i>
+                  <span className="hidden sm:inline">Add Account</span>
                 </button>
 
-                {/* Transfer Action */}
-                <button
-                  onClick={() => setIsTransferModalOpen(true)}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#18202C] hover:bg-[#202B3B] border border-[#1E2633] text-xs font-semibold text-slate-200 rounded-lg"
-                >
-                  <i data-lucide="arrow-right-left" className="w-3.5 h-3.5 text-blue-400"></i>
-                  <span>Transfer</span>
-                </button>
-
-                {/* Add Entry */}
                 <button
                   onClick={() => setIsAddTxnModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg shadow-md"
                 >
                   <i data-lucide="plus" className="w-3.5 h-3.5"></i>
-                  <span className="hidden sm:inline">Add Entry</span>
-                </button>
-
-                {/* AI Assistant Chat Trigger */}
-                <button
-                  onClick={() => setIsAiChatOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-lg shadow-md"
-                >
-                  <i data-lucide="sparkles" className="w-3.5 h-3.5 text-amber-300"></i>
-                  <span>AI Copilot</span>
+                  <span>Add Entry</span>
                 </button>
               </div>
             </header>
 
-            {/* Dashboard Routed Views */}
+            {/* ROUTED VIEWS */}
             <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+              {/* VIEW 1: DASHBOARD */}
               {currentView === 'dashboard' && (
                 <div className="space-y-6">
-                  {/* Greeting Banner */}
+                  {/* Dynamic Greeting */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#11161F]/70 border border-[#1E2633] p-5 rounded-2xl backdrop-blur-md">
                     <div>
                       <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                         {getDynamicGreeting(currentUser.name.split(' ')[0])}
                       </h1>
                       <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                        Personalized Workspace • <span className="text-emerald-400 font-mono">Net Surplus: +{formatMoney(netCashFlow, currentUser.currency)}</span>
+                        Monthly Inflow: <span className="text-emerald-400 font-mono font-semibold">{formatMoney(monthlyIncome)}</span> • Burn: <span className="text-rose-400 font-mono font-semibold">{formatMoney(monthlyExpenses)}</span>
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setIsCsvImportModalOpen(true)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold"
+                        onClick={() => setIsAddAccountModalOpen(true)}
+                        className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-semibold"
                       >
-                        + Upload CSV Transactions
+                        + Add Bank Account
                       </button>
                     </div>
                   </div>
 
-                  {/* 4 Main KPI Cards */}
+                  {/* 4 Main KPI Cards (Clean Uncrowded Money Numbers) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                     <div className="glass-card rounded-2xl p-5 border border-[#1E2633] shadow-card">
                       <span className="text-xs font-semibold uppercase text-slate-400">Net Worth</span>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-mono mt-2">
-                        {formatMoney(netWorth, currentUser.currency)}
+                        {formatMoney(netWorth)}
                       </h2>
                       <span className="text-[11px] text-blue-400 font-mono mt-1 block">
-                        {formatMoney(netWorth, currentUser.currency, 'compact')} Total Assets
+                        Cash + Investments
                       </span>
                     </div>
 
                     <div className="glass-card rounded-2xl p-5 border border-[#1E2633] shadow-card">
-                      <span className="text-xs font-semibold uppercase text-slate-400">Cash Balance</span>
+                      <span className="text-xs font-semibold uppercase text-slate-400">Total Cash Balance</span>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono mt-2">
-                        {formatMoney(totalBalance, currentUser.currency)}
+                        {formatMoney(totalBalance)}
                       </h2>
                       <span className="text-[11px] text-slate-400 font-mono mt-1 block">
                         Across {activeAccounts.length} accounts
@@ -909,17 +869,17 @@
                     <div className="glass-card rounded-2xl p-5 border border-[#1E2633] shadow-card">
                       <span className="text-xs font-semibold uppercase text-slate-400">Monthly Inflow</span>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-mono mt-2">
-                        {formatMoney(monthlyIncome, currentUser.currency)}
+                        {formatMoney(monthlyIncome)}
                       </h2>
                       <span className="text-[11px] text-emerald-400 font-mono mt-1 block">
-                        +{activeTransactions.filter(t => t.type === 'income').length} revenue streams
+                        Cleared Revenue
                       </span>
                     </div>
 
                     <div className="glass-card rounded-2xl p-5 border border-[#1E2633] shadow-card">
-                      <span className="text-xs font-semibold uppercase text-slate-400">Monthly Burn / Outflow</span>
+                      <span className="text-xs font-semibold uppercase text-slate-400">Monthly Expenses</span>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-rose-400 font-mono mt-2">
-                        {formatMoney(monthlyExpenses, currentUser.currency)}
+                        {formatMoney(monthlyExpenses)}
                       </h2>
                       <span className="text-[11px] text-slate-400 font-mono mt-1 block">
                         Savings Rate: {savingsRate}%
@@ -930,127 +890,89 @@
                   {/* Net Cash Flow Banner */}
                   <div className="glass-card rounded-2xl p-5 border border-emerald-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-glow-green">
                     <div>
-                      <span className="text-xs font-mono uppercase text-slate-400">Net Retained Cash Flow</span>
+                      <span className="text-xs font-mono uppercase text-slate-400">Monthly Net Cash Flow (Inflow − Outflow)</span>
                       <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono mt-0.5">
-                        +{formatMoney(netCashFlow, currentUser.currency)}
+                        +{formatMoney(netCashFlow)}
                       </h3>
                     </div>
                     <div className="flex items-center gap-3 text-xs font-mono">
                       <div className="px-3 py-2 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
                         <span className="text-slate-400 text-[10px] block">Inflow</span>
-                        <span className="font-bold text-emerald-400">{formatMoney(monthlyIncome, currentUser.currency)}</span>
+                        <span className="font-bold text-emerald-400">{formatMoney(monthlyIncome)}</span>
                       </div>
                       <span className="text-slate-500 font-bold">−</span>
                       <div className="px-3 py-2 rounded-xl bg-[#0B0F14] border border-[#1E2633]">
-                        <span className="text-slate-400 text-[10px] block">Outflow</span>
-                        <span className="font-bold text-rose-400">{formatMoney(monthlyExpenses, currentUser.currency)}</span>
+                        <span className="text-slate-400 text-[10px] block">Expenses</span>
+                        <span className="font-bold text-rose-400">{formatMoney(monthlyExpenses)}</span>
+                      </div>
+                      <span className="text-slate-500 font-bold">=</span>
+                      <div className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                        <span className="text-emerald-400 text-[10px] block">Surplus</span>
+                        <span className="font-bold text-white">+{formatMoney(netCashFlow)}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* 2x2 Middle Section */}
+                  {/* Middle Section: Spending Breakdown & Cash Flow */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* 1. Cash Flow History */}
-                    <div className="glass-card rounded-2xl p-5 border border-[#1E2633]">
-                      <h3 className="text-sm font-bold text-white mb-1">Cash Flow Dynamics</h3>
-                      <p className="text-xs text-slate-400 mb-4">Calculated from {currentUser.name}'s transaction history.</p>
-                      
-                      <div className="space-y-3">
-                        <div className="p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633] flex justify-between items-center">
-                          <span className="text-xs text-slate-300">Total Cleared Income</span>
-                          <span className="font-mono font-bold text-emerald-400">{formatMoney(monthlyIncome, currentUser.currency)}</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633] flex justify-between items-center">
-                          <span className="text-xs text-slate-300">Total Operating Expenses</span>
-                          <span className="font-mono font-bold text-rose-400">{formatMoney(monthlyExpenses, currentUser.currency)}</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex justify-between items-center">
-                          <span className="text-xs text-emerald-300 font-bold">Net Retained Cash</span>
-                          <span className="font-mono font-extrabold text-white">+{formatMoney(netCashFlow, currentUser.currency)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 2. Spending Distribution (Dynamic) */}
-                    <div className="glass-card rounded-2xl p-5 border border-[#1E2633]">
-                      <div className="flex justify-between items-center mb-3">
+                    <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-3">
+                      <div className="flex justify-between items-center pb-2 border-b border-[#1E2633]/60">
                         <h3 className="text-sm font-bold text-white">Spending Distribution</h3>
-                        <span className="text-xs font-mono text-slate-300">{formatMoney(monthlyExpenses, currentUser.currency)}</span>
+                        <span className="text-xs font-mono text-slate-300 font-bold">{formatMoney(monthlyExpenses)} Total</span>
                       </div>
-
                       <div className="space-y-2.5">
-                        {spendingCategories.length > 0 ? (
-                          spendingCategories.map(cat => (
-                            <div key={cat.name} className="space-y-1">
-                              <div className="flex justify-between text-xs">
-                                <span className="text-slate-300">{cat.name}</span>
-                                <span className="font-mono font-bold text-slate-200">{formatMoney(cat.amount, currentUser.currency)} ({cat.percentage}%)</span>
-                              </div>
-                              <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${cat.percentage}%`, backgroundColor: cat.color }}></div>
-                              </div>
+                        {spendingCategories.map(cat => (
+                          <div key={cat.name} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="text-slate-300">{cat.name}</span>
+                              <span className="font-mono font-bold text-slate-200">{formatMoney(cat.amount)} ({cat.percentage}%)</span>
                             </div>
-                          ))
-                        ) : (
-                          <div className="py-8 text-center text-xs text-slate-500">
-                            No recorded expenses yet. Click "+ Add Entry" or "Import CSV".
+                            <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${cat.percentage}%`, backgroundColor: cat.color }}></div>
+                            </div>
                           </div>
-                        )}
+                        ))}
                       </div>
                     </div>
 
-                    {/* 3. Financial Health */}
-                    <div className="glass-card rounded-2xl p-5 border border-[#1E2633]">
-                      <h3 className="text-sm font-bold text-white mb-2">Financial Health Score</h3>
-                      <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#0B0F14] border border-[#1E2633]">
-                        <div className="h-16 w-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex flex-col items-center justify-center">
-                          <span className="text-2xl font-black text-emerald-400 font-mono leading-none">{healthScore}</span>
-                          <span className="text-[9px] font-mono text-slate-400">/ 100</span>
-                        </div>
-                        <div>
-                          <h4 className="text-base font-bold text-white">
-                            {healthScore >= 80 ? 'EXCELLENT TIER' : healthScore >= 60 ? 'HEALTHY' : 'NEEDS ATTENTION'}
-                          </h4>
-                          <p className="text-xs text-slate-400">Savings Rate: {savingsRate}%</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 4. AI Copilot Preview */}
                     <div className="glass-card rounded-2xl p-5 border border-[#1E2633] flex flex-col justify-between">
                       <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <i data-lucide="sparkles" className="w-4 h-4 text-amber-400"></i>
-                          <h3 className="text-sm font-bold text-white">Smart Financial Insights</h3>
+                        <h3 className="text-sm font-bold text-white mb-2">Financial Health & Runway</h3>
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-[#0B0F14] border border-[#1E2633] mb-4">
+                          <div className="h-14 w-14 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex flex-col items-center justify-center">
+                            <span className="text-2xl font-black text-emerald-400 font-mono leading-none">88</span>
+                            <span className="text-[8px] font-mono text-slate-400">/ 100</span>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-white">HEALTHY WEALTH TIER</h4>
+                            <p className="text-xs text-slate-400">Runway: {(totalBalance / (monthlyExpenses || 1)).toFixed(1)} Months Cash Buffer</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-300">
-                          {spendingCategories[0] 
-                            ? `Your highest expense category is ${spendingCategories[0].name} at ${formatMoney(spendingCategories[0].amount, currentUser.currency)}.` 
-                            : `Upload your transactions to receive personalized AI recommendations.`}
-                        </p>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Savings Target Rate</span>
+                            <span className="font-mono text-emerald-400 font-bold">{savingsRate}% (Target: 40%)</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-[#1A2332] rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(savingsRate, 100)}%` }}></div>
+                          </div>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setIsAiChatOpen(true)}
-                        className="mt-4 w-full py-2 rounded-xl bg-[#18202C] hover:bg-[#202B3B] text-xs font-semibold text-emerald-400 border border-emerald-500/30 flex items-center justify-center gap-2"
-                      >
-                        <i data-lucide="message-square" className="w-3.5 h-3.5"></i>
-                        <span>Ask AI Copilot</span>
-                      </button>
                     </div>
                   </div>
 
-                  {/* Transactions Table */}
+                  {/* Recent Transactions Table */}
                   <div className="glass-card rounded-2xl p-5 border border-[#1E2633]">
                     <div className="flex justify-between items-center pb-4 border-b border-[#1E2633]/60">
                       <div>
-                        <h3 className="text-sm font-bold text-white">Active Transactions Ledger</h3>
+                        <h3 className="text-sm font-bold text-white">Recent Transactions</h3>
                         <p className="text-xs text-slate-400">{activeTransactions.length} recorded entries for {currentUser.name}</p>
                       </div>
                       <button
-                        onClick={() => setIsCsvImportModalOpen(true)}
+                        onClick={() => setIsAddTxnModalOpen(true)}
                         className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold"
                       >
-                        + Import CSV
+                        + Add Record
                       </button>
                     </div>
 
@@ -1066,14 +988,14 @@
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1E2633]/50">
-                          {activeTransactions.slice(0, 8).map(t => (
+                          {activeTransactions.slice(0, 6).map(t => (
                             <tr key={t.id} className="hover:bg-[#161D29]/80 transition-colors">
                               <td className="py-3 px-3 font-semibold text-slate-200">{t.desc}</td>
                               <td className="py-3 px-3 text-slate-400">{t.category}</td>
                               <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{t.account}</td>
                               <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{t.date}</td>
                               <td className={`py-3 px-3 text-right font-mono font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-slate-200'}`}>
-                                {t.type === 'income' ? '+' : ''}{formatMoney(t.amount, currentUser.currency)}
+                                {t.type === 'income' ? '+' : ''}{formatMoney(t.amount)}
                               </td>
                             </tr>
                           ))}
@@ -1084,22 +1006,161 @@
                 </div>
               )}
 
+              {/* VIEW 2: FULL ANALYTICS SECTION */}
+              {currentView === 'analytics' && (
+                <div className="space-y-6">
+                  <div className="bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+                    <h2 className="text-xl font-bold text-white">Financial Analytics & Expense Breakdown</h2>
+                    <p className="text-xs text-slate-400 mt-1">Detailed cash flow velocity and optimization metrics for {currentUser.name}.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+                      <p className="text-xs text-slate-400 uppercase font-mono">Monthly Surplus</p>
+                      <h3 className="text-2xl font-bold text-emerald-400 font-mono mt-1">+{formatMoney(netCashFlow)}</h3>
+                      <p className="text-[11px] text-slate-400 mt-1">Savings Rate: {savingsRate}%</p>
+                    </div>
+                    <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+                      <p className="text-xs text-slate-400 uppercase font-mono">Burn Runway</p>
+                      <h3 className="text-2xl font-bold text-white font-mono mt-1">{(totalBalance / (monthlyExpenses || 1)).toFixed(1)} Months</h3>
+                      <p className="text-[11px] text-slate-400 mt-1">At {formatMoney(monthlyExpenses)}/mo burn</p>
+                    </div>
+                    <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+                      <p className="text-xs text-slate-400 uppercase font-mono">Total Liquid Cash</p>
+                      <h3 className="text-2xl font-bold text-blue-400 font-mono mt-1">{formatMoney(totalBalance)}</h3>
+                      <p className="text-[11px] text-slate-400 mt-1">{activeAccounts.length} Bank Vaults</p>
+                    </div>
+                    <div className="glass-card rounded-2xl p-4 border border-[#1E2633]">
+                      <p className="text-xs text-slate-400 uppercase font-mono">Investment Pool</p>
+                      <h3 className="text-2xl font-bold text-purple-400 font-mono mt-1">{formatMoney(totalInvestments)}</h3>
+                      <p className="text-[11px] text-slate-400 mt-1">{activeHoldings.length} Assets</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-4">
+                      <h3 className="text-sm font-bold text-white">Expense Distribution by Category</h3>
+                      <div className="space-y-3">
+                        {spendingCategories.map(cat => (
+                          <div key={cat.name} className="p-3 rounded-xl bg-[#0B0F14] border border-[#1E2633] flex justify-between items-center">
+                            <div>
+                              <p className="text-xs font-semibold text-slate-200">{cat.name}</p>
+                              <p className="text-[10px] text-slate-400 font-mono">{cat.percentage}% of total outflow</p>
+                            </div>
+                            <span className="text-xs font-mono font-bold text-white">{formatMoney(cat.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-4">
+                      <h3 className="text-sm font-bold text-white">Smart Optimization Insights</h3>
+                      <div className="p-3.5 rounded-xl bg-[#0B0F14] border border-[#1E2633] space-y-1">
+                        <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                          <i data-lucide="trending-down" className="w-3.5 h-3.5"></i>
+                          Healthy Savings Buffer
+                        </span>
+                        <p className="text-xs text-slate-300">
+                          You retain {savingsRate}% of your monthly income (+{formatMoney(netCashFlow)}). Consider investing an extra {formatMoney(5000)} monthly into your index fund.
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-[#0B0F14] border border-[#1E2633] space-y-1">
+                        <span className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                          <i data-lucide="shield-check" className="w-3.5 h-3.5"></i>
+                          Runway Cushion
+                        </span>
+                        <p className="text-xs text-slate-300">
+                          Your liquid balance of {formatMoney(totalBalance)} comfortably covers {(totalBalance / (monthlyExpenses || 1)).toFixed(1)} months of living expenses.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 3: FULL INVESTMENTS SECTION */}
+              {currentView === 'investments' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#11161F] border border-[#1E2633] p-5 rounded-2xl">
+                    <div>
+                      <h2 className="text-xl font-bold text-white">Investment Portfolio & Holdings</h2>
+                      <p className="text-xs text-slate-400 mt-1">Live asset allocation and trade execution for {currentUser.name}.</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <span className="text-xs text-slate-400 font-mono">Portfolio Valuation</span>
+                        <h3 className="text-2xl font-extrabold text-white font-mono">{formatMoney(totalInvestments)}</h3>
+                      </div>
+                      <button
+                        onClick={() => setIsTradeModalOpen(true)}
+                        className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md"
+                      >
+                        <i data-lucide="trending-up" className="w-4 h-4"></i>
+                        <span>Trade / Rebalance</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="glass-card rounded-2xl border border-[#1E2633] overflow-hidden">
+                    <div className="p-4 border-b border-[#1E2633] flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-white">Active Positions</h3>
+                      <span className="text-xs font-mono text-emerald-400">{activeHoldings.length} Assets Held</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#0E131A] border-b border-[#1E2633] text-[10px] font-mono uppercase text-slate-400">
+                          <tr>
+                            <th className="py-3 px-4">Symbol & Name</th>
+                            <th className="py-3 px-4">Asset Type</th>
+                            <th className="py-3 px-4">Units / Shares</th>
+                            <th className="py-3 px-4">Avg Buy (₹)</th>
+                            <th className="py-3 px-4">Live Price (₹)</th>
+                            <th className="py-3 px-4 text-right">Total Value (₹)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#1E2633]/60">
+                          {activeHoldings.map(h => (
+                            <tr key={h.symbol} className="hover:bg-[#161D29] transition-colors">
+                              <td className="py-3.5 px-4 font-semibold text-white">
+                                <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-emerald-400 font-mono text-xs mr-2">
+                                  {h.symbol}
+                                </span>
+                                {h.name}
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-slate-400">{h.type}</td>
+                              <td className="py-3.5 px-4 font-mono text-slate-200">{h.shares}</td>
+                              <td className="py-3.5 px-4 font-mono text-slate-400">₹{h.avg.toFixed(2)}</td>
+                              <td className="py-3.5 px-4 font-mono font-bold text-white">₹{h.price.toFixed(2)}</td>
+                              <td className="py-3.5 px-4 font-mono font-bold text-right text-emerald-400">
+                                {formatMoney(h.value || (h.shares * h.price))}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 4: TRANSACTIONS VIEW */}
               {currentView === 'transactions' && (
                 <div className="glass-card rounded-2xl p-5 border border-[#1E2633] space-y-4">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center pb-4 border-b border-[#1E2633]/60">
                     <h2 className="text-xl font-bold text-white">Transactions Ledger — {currentUser.name}</h2>
                     <button
-                      onClick={() => setIsCsvImportModalOpen(true)}
+                      onClick={() => setIsAddTxnModalOpen(true)}
                       className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs"
                     >
-                      Import CSV
+                      + Add Record
                     </button>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
                         <tr className="border-b border-[#1E2633] text-[10px] font-mono uppercase text-slate-400">
-                          <th className="py-3 px-3">ID</th>
                           <th className="py-3 px-3">Description</th>
                           <th className="py-3 px-3">Category</th>
                           <th className="py-3 px-3">Account</th>
@@ -1110,13 +1171,12 @@
                       <tbody className="divide-y divide-[#1E2633]/50">
                         {activeTransactions.map(t => (
                           <tr key={t.id} className="hover:bg-[#161D29]/80 transition-colors">
-                            <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{t.id}</td>
                             <td className="py-3 px-3 font-semibold text-slate-200">{t.desc}</td>
                             <td className="py-3 px-3 text-slate-400">{t.category}</td>
                             <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{t.account}</td>
                             <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{t.date}</td>
                             <td className={`py-3 px-3 text-right font-mono font-bold ${t.type === 'income' ? 'text-emerald-400' : 'text-slate-200'}`}>
-                              {t.type === 'income' ? '+' : ''}{formatMoney(t.amount, currentUser.currency)}
+                              {t.type === 'income' ? '+' : ''}{formatMoney(t.amount)}
                             </td>
                           </tr>
                         ))}
@@ -1128,424 +1188,262 @@
             </main>
           </div>
 
-          {/* CSV IMPORT MODAL */}
-          {isCsvImportModalOpen && (
-            <CsvImportModal
-              onClose={() => setIsCsvImportModalOpen(false)}
-              onImport={handleImportCSVData}
-              currency={currentUser.currency}
-            />
-          )}
-
-          {/* AI COPILOT CHAT MODAL */}
-          {isAiChatOpen && (
+          {/* ADD BANK ACCOUNT MODAL */}
+          {isAddAccountModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-              <div className="w-full max-w-lg bg-[#11161F] border border-[#1E2633] rounded-3xl shadow-modal overflow-hidden flex flex-col h-[520px]">
-                <div className="p-4 border-b border-[#1E2633] flex items-center justify-between bg-[#0E131A]">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                      <i data-lucide="sparkles" className="w-4 h-4"></i>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">CASHXFLOW Smart Copilot</h3>
-                      <p className="text-[10px] text-slate-400 font-mono">Analyzing {currentUser.name}'s finances</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setIsAiChatOpen(false)} className="text-slate-400 hover:text-white">
+              <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-3xl shadow-modal p-6 space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-[#1E2633]">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="plus-circle" className="w-4 h-4 text-emerald-400"></i>
+                    Add Bank Account / Vault
+                  </h3>
+                  <button onClick={() => setIsAddAccountModalOpen(false)} className="text-slate-400 hover:text-white">
                     <i data-lucide="x" className="w-4 h-4"></i>
                   </button>
                 </div>
 
-                <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                  {aiMessages.map((m, idx) => (
-                    <div key={idx} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] p-3.5 rounded-2xl text-xs ${
-                        m.sender === 'user' ? 'bg-emerald-500 text-slate-950 font-medium' : 'bg-[#0B0F14] border border-[#1E2633] text-slate-200'
-                      }`}>
-                        {m.text}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const name = e.target.name.value;
+                    const type = e.target.type.value;
+                    const balance = parseFloat(e.target.balance.value) || 0;
+                    const number = "••• " + (Math.floor(1000 + Math.random() * 9000));
+                    handleAddAccount({ name, type, balance, number, color: "#10B981", badge: type });
+                  }}
+                  className="space-y-3"
+                >
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Account / Bank Name</label>
+                    <input
+                      name="name"
+                      type="text"
+                      required
+                      placeholder="e.g. Kotak 811 Savings or SBI Vault"
+                      className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
 
-                <form onSubmit={handleSendAiMessage} className="p-3 border-t border-[#1E2633] bg-[#0E131A] flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Ask e.g. Where am I spending the most?..."
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    className="flex-1 bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                  <button type="submit" className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl">
-                    Ask
-                  </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Account Type</label>
+                      <select
+                        name="type"
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="Savings">Savings</option>
+                        <option value="Checking">Checking / Salary</option>
+                        <option value="Fixed Deposit">Fixed Deposit</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Demat">Demat Pool</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Opening Balance (₹)</label>
+                      <input
+                        name="balance"
+                        type="number"
+                        step="0.01"
+                        required
+                        placeholder="25000"
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-3">
+                    <button type="button" onClick={() => setIsAddAccountModalOpen(false)} className="flex-1 py-2 rounded-xl bg-[#18202C] text-xs font-semibold text-slate-300">
+                      Cancel
+                    </button>
+                    <button type="submit" className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">
+                      Save Account
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>
           )}
 
-          {/* ADD TRANSACTION MODAL */}
+          {/* RECORD TRANSACTION MODAL */}
           {isAddTxnModalOpen && (
-            <AddTxnModal
-              accounts={activeAccounts}
-              currency={currentUser.currency}
-              onClose={() => setIsAddTxnModalOpen(false)}
-              onAdd={handleAddTransaction}
-            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+              <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-3xl shadow-modal p-6 space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-[#1E2633]">
+                  <h3 className="text-sm font-bold text-white">Record Transaction (₹)</h3>
+                  <button onClick={() => setIsAddTxnModalOpen(false)} className="text-slate-400 hover:text-white">
+                    <i data-lucide="x" className="w-4 h-4"></i>
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const desc = e.target.desc.value;
+                    const amount = parseFloat(e.target.amount.value) || 0;
+                    const type = e.target.type.value;
+                    const category = type === 'income' ? 'Income' : e.target.category.value;
+                    const account = e.target.account.value;
+
+                    handleAddTransaction({
+                      id: `TXN-${Date.now()}`,
+                      date: "Aug 31, 2026",
+                      desc,
+                      category,
+                      account,
+                      amount: type === 'income' ? amount : -amount,
+                      type,
+                      status: "Completed"
+                    });
+                  }}
+                  className="space-y-3"
+                >
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-[#0B0F14] rounded-xl border border-[#1E2633]">
+                    <select
+                      name="type"
+                      className="col-span-2 bg-transparent text-xs text-emerald-400 font-bold p-1 text-center focus:outline-none"
+                    >
+                      <option value="expense" className="bg-[#11161F] text-rose-400">Expense Outflow (−)</option>
+                      <option value="income" className="bg-[#11161F] text-emerald-400">Income Inflow (+)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Description</label>
+                    <input
+                      name="desc"
+                      type="text"
+                      required
+                      placeholder="e.g. Electricity, Groceries, Freelance"
+                      className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Amount (₹)</label>
+                      <input
+                        name="amount"
+                        type="number"
+                        step="0.01"
+                        required
+                        placeholder="2500"
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Category</label>
+                      <select
+                        name="category"
+                        className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="Bills & Utilities">Bills & Utilities</option>
+                        <option value="Food & Groceries">Food & Groceries</option>
+                        <option value="Shopping & Lifestyle">Shopping & Lifestyle</option>
+                        <option value="Investments">Investments</option>
+                        <option value="Travel & Commute">Travel & Commute</option>
+                        <option value="Other & Health">Other & Health</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Charged Account</label>
+                    <select
+                      name="account"
+                      className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    >
+                      {activeAccounts.map(acc => (
+                        <option key={acc.id} value={acc.name}>{acc.name} ({formatMoney(acc.balance)})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-2 pt-3">
+                    <button type="button" onClick={() => setIsAddTxnModalOpen(false)} className="flex-1 py-2 rounded-xl bg-[#18202C] text-xs font-semibold text-slate-300">
+                      Cancel
+                    </button>
+                    <button type="submit" className="flex-1 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">
+                      Save Record
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* TRADE ORDER MODAL (INVESTMENTS) */}
+          {isTradeModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+              <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-3xl shadow-modal p-6 space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-[#1E2633]">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="trending-up" className="w-4 h-4 text-emerald-400"></i>
+                    Execute Stock / ETF Trade
+                  </h3>
+                  <button onClick={() => setIsTradeModalOpen(false)} className="text-slate-400 hover:text-white">
+                    <i data-lucide="x" className="w-4 h-4"></i>
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const symbol = e.target.symbol.value;
+                    const action = e.target.action.value;
+                    const shares = parseFloat(e.target.shares.value) || 0;
+                    const asset = activeHoldings.find(h => h.symbol === symbol) || { price: 250 };
+                    const total = shares * asset.price;
+                    handleTrade({ symbol, action, shares, price: asset.price, total });
+                  }}
+                  className="space-y-3"
+                >
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-[#0B0F14] rounded-xl border border-[#1E2633]">
+                    <select name="action" className="col-span-2 bg-transparent text-xs text-emerald-400 font-bold p-1 text-center focus:outline-none">
+                      <option value="BUY" className="bg-[#11161F] text-emerald-400">Buy Position</option>
+                      <option value="SELL" className="bg-[#11161F] text-rose-400">Sell Position</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Select Asset</label>
+                    <select name="symbol" className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono">
+                      {activeHoldings.map(h => (
+                        <option key={h.symbol} value={h.symbol}>{h.symbol} — {h.name} (₹{h.price.toFixed(2)})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Units / Quantity</label>
+                    <input
+                      name="shares"
+                      type="number"
+                      step="any"
+                      required
+                      defaultValue="5"
+                      className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-3">
+                    <button type="button" onClick={() => setIsTradeModalOpen(false)} className="flex-1 py-2 rounded-xl bg-[#18202C] text-xs font-semibold text-slate-300">
+                      Cancel
+                    </button>
+                    <button type="submit" className="flex-1 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">
+                      Confirm Trade
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
         </div>
       );
     }
 
-    // --- LOGIN FORM COMPONENT ---
-    function LoginForm({ onLogin, onExploreDemo }) {
-      const [email, setEmail] = useState('vaibhav@cashxflow.io');
-      const [password, setPassword] = useState('password123');
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        onLogin(email, password);
-      };
-
-      return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Address</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-colors"
-          >
-            Sign In to CASHXFLOW
-          </button>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={onExploreDemo}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
-            >
-              Explore Demo Dashboard (Vaibhav Sharma) →
-            </button>
-          </div>
-        </form>
-      );
-    }
-
-    // --- SIGN UP FORM COMPONENT ---
-    function SignUpForm({ onSignUp }) {
-      const [name, setName] = useState('');
-      const [email, setEmail] = useState('');
-      const [password, setPassword] = useState('');
-      const [currency, setCurrency] = useState('INR');
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        onSignUp(name, email, password, currency);
-      };
-
-      return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Full Name</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Rahul Sharma"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Address</label>
-            <input
-              type="email"
-              required
-              placeholder="name@domain.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Password</label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Base Currency</label>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
-            >
-              <option value="INR">₹ INR — Indian Rupee</option>
-              <option value="USD">$ USD — US Dollar</option>
-              <option value="EUR">€ EUR — Euro</option>
-              <option value="GBP">£ GBP — British Pound</option>
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-colors"
-          >
-            Create Your Financial Account
-          </button>
-        </form>
-      );
-    }
-
-    // --- CSV IMPORT MODAL COMPONENT ---
-    function CsvImportModal({ onClose, onImport, currency }) {
-      const [csvText, setCsvText] = useState('');
-      const [parsedPreview, setParsedPreview] = useState([]);
-      const fileInputRef = useRef(null);
-
-      const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const content = event.target.result;
-          setCsvText(content);
-          parseCSV(content);
-        };
-        reader.readAsText(file);
-      };
-
-      const parseCSV = (text) => {
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) return;
-        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-        const rows = [];
-
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-          const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-          const rowObj = {};
-          headers.forEach((h, idx) => {
-            rowObj[h] = cols[idx] || '';
-          });
-          rows.push(rowObj);
-        }
-
-        setParsedPreview(rows);
-      };
-
-      const handleConfirm = () => {
-        if (parsedPreview.length === 0) {
-          alert("Please upload or paste CSV data first.");
-          return;
-        }
-        onImport(parsedPreview);
-      };
-
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-[#11161F] border border-[#1E2633] rounded-3xl shadow-modal overflow-hidden">
-            <div className="p-5 border-b border-[#1E2633] flex items-center justify-between bg-[#0E131A]">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-                  <i data-lucide="upload" className="w-4 h-4"></i>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Import Bank CSV Transactions</h3>
-                  <p className="text-[11px] text-slate-400">Upload statement from HDFC, ICICI, Zerodha, etc.</p>
-                </div>
-              </div>
-              <button onClick={onClose} className="text-slate-400 hover:text-white">
-                <i data-lucide="x" className="w-4 h-4"></i>
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* File Upload Box */}
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-[#1E2633] hover:border-emerald-500/50 rounded-2xl p-6 text-center cursor-pointer bg-[#0B0F14] transition-colors group"
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <i data-lucide="file-spreadsheet" className="w-8 h-8 text-emerald-400 mx-auto mb-2 group-hover:scale-110 transition-transform"></i>
-                <p className="text-xs font-bold text-white">Click to Upload .CSV File</p>
-                <p className="text-[10px] text-slate-400 mt-1">Columns: Date, Description, Category, Amount, Type</p>
-              </div>
-
-              {/* Sample CSV Format Helper */}
-              <div className="p-3 rounded-xl bg-[#0E131A] border border-[#1E2633] text-[11px] space-y-1">
-                <span className="font-mono text-slate-400 block text-[10px] uppercase font-bold">CSV Structure:</span>
-                <p className="font-mono text-emerald-400">Date,Description,Category,Amount,Type</p>
-                <p className="font-mono text-slate-500">01-08-2026,Client Retainer,Income,125000,income</p>
-              </div>
-
-              {parsedPreview.length > 0 && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono text-emerald-300">
-                  ✓ {parsedPreview.length} rows parsed and ready to import into active dashboard!
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl bg-[#18202C] text-xs font-semibold text-slate-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={parsedPreview.length === 0}
-                  className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-xs"
-                >
-                  Confirm & Import ({parsedPreview.length})
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // --- ADD TRANSACTION MODAL ---
-    function AddTxnModal({ accounts, currency, onClose, onAdd }) {
-      const [desc, setDesc] = useState('');
-      const [category, setCategory] = useState('Bills & Utilities');
-      const [account, setAccount] = useState(accounts[0]?.name || 'Primary Account');
-      const [amount, setAmount] = useState('');
-      const [type, setType] = useState('expense');
-
-      const handleSubmit = (e) => {
-        e.preventDefault();
-        const amt = parseFloat(amount);
-        if (!amt || amt <= 0) return;
-
-        onAdd({
-          id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
-          date: "Aug 31, 2026",
-          time: "Just now",
-          desc: desc || (type === 'income' ? 'Client Remittance' : 'Operating Expense'),
-          merchant: 'Direct Ledger Entry',
-          category: type === 'income' ? 'Income' : category,
-          account: account,
-          amount: type === 'income' ? amt : -amt,
-          type: type,
-          status: "Completed"
-        });
-      };
-
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md bg-[#11161F] border border-[#1E2633] rounded-3xl shadow-modal overflow-hidden p-6 space-y-4">
-            <h3 className="text-sm font-bold text-white">Record Transaction</h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 p-1 bg-[#0B0F14] rounded-xl border border-[#1E2633]">
-                <button
-                  type="button"
-                  onClick={() => setType('expense')}
-                  className={`py-1.5 rounded-lg text-xs font-bold ${type === 'expense' ? 'bg-rose-500/20 text-rose-400' : 'text-slate-400'}`}
-                >
-                  Expense
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setType('income')}
-                  className={`py-1.5 rounded-lg text-xs font-bold ${type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-400'}`}
-                >
-                  Income
-                </button>
-              </div>
-
-              <div>
-                <label className="text-xs text-slate-400 block mb-1">Description</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. AWS Cloud, Salary, Groceries"
-                  value={desc}
-                  onChange={(e) => setDesc(e.target.value)}
-                  className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Amount ({currency})</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    disabled={type === 'income'}
-                    className="w-full bg-[#0B0F14] border border-[#1E2633] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Bills & Utilities">Bills & Utilities</option>
-                    <option value="Food & Groceries">Food & Groceries</option>
-                    <option value="Shopping & Lifestyle">Shopping & Lifestyle</option>
-                    <option value="Investments">Investments</option>
-                    <option value="Travel & Commute">Travel & Commute</option>
-                    <option value="Other & Health">Other & Health</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button type="button" onClick={onClose} className="flex-1 py-2 rounded-xl bg-[#18202C] text-xs font-semibold text-slate-300">
-                  Cancel
-                </button>
-                <button type="submit" className="flex-1 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs">
-                  Save Entry
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    // --- MOUNT REACT APPLICATION ---
+    // --- MOUNT APP ---
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<CashXFlowMultiUserApp />);
+    root.render(<CashXFlowApp />);
   </script>
 </body>
 </html>
