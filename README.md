@@ -1,53 +1,128 @@
-# 💰 CASHXFLOW — Smart Cash Flow & Financial Management Dashboard
+# 💰 CASHXFLOW — Smart Multi-User Cash Flow & Financial Management Platform
 
-> **A high-octane, institutional-grade Indian dark finance treasury and cash flow management platform (INR ₹).**
+<div align="center">
 
-![CASHXFLOW Dashboard Preview](https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&auto=format&fit=crop&q=80)
+[![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Chart.js](https://img.shields.io/badge/Chart.js-4.x-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white)](https://www.chartjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Ready-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
----
+**A modern, multi-user personal treasury and cash flow management platform designed with an Indian-fintech dark aesthetic (INR ₹).**
 
-## ⚡ Highlights & Key Features
-
-1. **Brand Identity:** Reimagined as **CASHXFLOW** with the tagline *"Smart Cash Flow & Financial Management Dashboard"*.
-2. **Dynamic Greeting:** `Good Morning / Good Afternoon / Good Evening, Vaibhav 👋` based on local system time.
-3. **100% Indian Rupee (₹ INR) Formatting:** Native Indian Numbering System (`₹12.45 Lakh`, `₹48.50 Lakh`, `₹1,89,600.00`).
-4. **Primary KPI Cards:**
-   - **Net Worth:** `₹48,50,000.00` (`₹48.50 Lakh`, `↑ 14.2% vs last month`)
-   - **Total Balance:** `₹16,87,620.50` (`₹16.88 Lakh`, `↑ 8.6% vs last month`)
-   - **Monthly Income:** `₹2,85,000.00` (`₹2.85 Lakh`, `↑ 12.4% vs last month`)
-   - **Monthly Expenses:** `₹95,400.00` (`₹95.4k`, `↓ 4.2% vs last month - Favorable`)
-5. **Prominent Net Cash Flow KPI:** `Monthly Income − Monthly Expenses = +₹1,89,600.00` with **66.5% Savings Rate**.
-6. **3-Series Cash Flow Graph:** Interactive monthly comparison of **Income vs Expenses vs Net Cash Flow**.
-7. **Spending Distribution Donut Chart:** `Food & Groceries, Bills & Utilities, Shopping & Lifestyle, Travel, Investments (SIPs), Entertainment, Other`.
-8. **Monthly Spending Trend Graph:** Dedicated expense trajectory curve showing month-by-month reduction.
-9. **Financial Health Score:** `87 / 100 — HEALTHY` with emergency fund runway (17.6 months) and investment yield (+14.8% p.a.).
-10. **Money Distribution Visualization:** Asset allocation across `Direct Equity & MFs, Liquid Cash, Fixed Deposits (FD), Gold Bonds (SGB), Digital Assets`.
-11. **Financial Insights & AI Smart Recommendations:** Automated actionable guidance (e.g. `Move ₹50k to Sweep FD to earn +₹3,550/yr`).
-12. **Upcoming Payments & EMIs:** Tracks Home Loan EMI, Tata Nexon Auto Loan, Tata Power Electricity, AWS Cloud, and JioFiber with due countdowns.
-13. **Audited Transactions Ledger:** Search, category filter, date, account filter, and 1-click **CSV Ledger Export**.
-14. **Commercial Cards Fleet:** Flip/reveal PANs, spending limits, and instant freeze/unfreeze controls.
-15. **NSE / BSE Investment Portfolio:** Live streaming ticker ticks, holdings breakdown, and interactive Buy/Sell order execution modal.
+</div>
 
 ---
 
-## 🚀 How to Run
+## 📖 Short Description
 
-### Instant 1-Second Run (Zero Setup / No Node.js Needed)
-Double-click `index.html` or run:
-```powershell
-Start-Process "index.html"
+**CASHXFLOW** is an institutional-grade, multi-tenant financial management dashboard built for tracking income, managing living expenses, monitoring investments, and projecting savings runway in real time. 
+
+Instead of static data, CASHXFLOW operates as a dynamic **multi-user application** where each authenticated user (e.g., **Vaibhav**, **Rahul**, or any newly registered user) gets their own isolated financial database, customizable bank accounts, automated CSV import processing, and contextual AI recommendations.
+
+---
+
+## 📊 Dashboard Architecture & Layout
+
+```text
+┌──────────────────────────────────────┐ ┌─────────────────────────────────────┐
+│ CASH FLOW (Income vs Expenses vs Net)│ │ SPENDING DISTRIBUTION               │
+│ Inflow  ────────────────────         │ │       ◯  Bills: 28%  Food: 22%      │
+│ Outflow - - - - - - - - - -          │ │          Shopping: 18%  SIP: 15%    │
+│ Net     ····················         │ │          Travel: 10%    Other: 7%   │
+│ Mar   Apr   May   Jun   Jul   Aug    │ │ Total Outflow: ₹28,400              │
+└──────────────────────────────────────┘ └─────────────────────────────────────┘
+
+┌──────────────────────────────────────┐ ┌─────────────────────────────────────┐
+│ MONTHLY SPENDING TREND               │ │ FINANCIAL HEALTH SCORE              │
+│ ₹40k ┤    ╭──╮                       │ │              88 / 100               │
+│ ₹30k ┤───╯   ╰────╮                  │ │           HEALTHY STATUS            │
+│ ₹20k ┤            ╰────              │ │ Savings Rate: 66%                   │
+│ Jan   Feb   Mar   Apr   May   Jun    │ │ Cash Runway: 5.1 Months             │
+└──────────────────────────────────────┘ └─────────────────────────────────────┘
 ```
 
-### Run in VS Code
-1. Open folder in VS Code: `code .`
-2. Right-click `index.html` → **Open with Live Server**.
-3. Or run with Vite/React: `npm install` && `npm run dev`.
+---
+
+## ✨ Key Features
+
+### 1. 🔐 Multi-User Authentication & Data Isolation
+- **Sign In / Sign Up System:** User accounts with password visibility toggle (👁️ eye button).
+- **Preset User Profiles:** Instant switching between **User 1 (Vaibhav)** and **User 2 (Rahul)**, plus a **+ Add User** action.
+- **Tenant Isolation:** Accounts, transactions, holdings, and metrics are isolated per `userId`.
+
+### 2. 💳 Bank Accounts & Vault Management
+- **Add Bank Accounts:** Add customizable accounts (Savings, Checking/Salary, Fixed Deposit, Credit Line, Demat) with live balance updates.
+- **Multi-Bank Overview:** Track balances across multiple banks with one-click liquidity transfers.
+
+### 3. 📈 3-Series Cash Flow & Real-Time Analytics
+- **Inflow vs. Outflow vs. Net Cash:** Dynamic comparison across 6-month and 12-month periods.
+- **Dynamic Category Grouping:** Real-time percentage breakdowns calculated from transaction records.
+- **Financial Health Score (0–100):** Algorithm evaluating savings rate (`%`), liquidity runway (`months`), and debt ratio.
+
+### 4. 📂 Bank CSV Bulk Import Engine
+- **One-Click CSV Ingestion:** Drag-and-drop or select bank statements (`.csv`).
+- **Instant Graph Recalculation:** Automatically parses transactions, updates KPI cards, category donuts, and cash flow charts.
+
+### 5. 💹 Investment Portfolio & Rebalancing
+- **Stock & ETF Holdings:** Track index funds, equities, mutual funds, and gold bonds.
+- **Interactive Trade Order Modal:** Buy and sell positions with simulated cash debit/credit adjustments.
+
+### 6. 🤖 Contextual AI Financial Copilot
+- Natural language financial query engine analyzing the active user's transactions to identify high-spend categories, surplus margins, and optimization tips.
 
 ---
 
 ## 🛠️ Tech Stack
-- **React 18 & Babel Standalone**
-- **Tailwind CSS (Near-Black `#0B0F14` Dark Aesthetic)**
-- **Chart.js & Recharts**
-- **Lucide Icons**
-- **Indian Numbering Localization (`en-IN`)**
+
+- **Frontend:** React 18, Tailwind CSS, Chart.js, Recharts, Lucide Icons
+- **Backend:** Node.js, Express, JWT Authentication, CORS
+- **Database Schema:** PostgreSQL / SQLite relational architecture (`server/schema.sql`)
+- **Formatting:** Indian Numbering System (`en-IN`) with standard currency representation (`₹`)
+
+---
+
+## 🚀 Getting Started
+
+### ⚡ Option 1: Instant Browser Launch (Zero Setup)
+Open the application directly in any browser:
+```powershell
+Start-Process "index.html"
+```
+
+### 💻 Option 2: Run with Node.js & Vite
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Start the Vite development server
+npm run dev
+
+# 3. Start the Express backend API (optional)
+node server/server.js
+```
+
+---
+
+## 📁 Repository Structure
+
+```text
+finance-dashboard/
+├── index.html                  # Standalone zero-setup multi-user web application
+├── sample_transactions.csv     # Sample CSV dataset for testing import
+├── package.json                # Project dependencies and build scripts
+├── tailwind.config.js          # Dark fintech theme definitions
+├── server/
+│   ├── server.js               # Express REST API & JWT authentication backend
+│   └── schema.sql              # Relational database schema (PostgreSQL/SQLite)
+└── src/
+    ├── App.jsx                 # Root React multi-user application component
+    ├── data/
+    │   └── mockData.js         # Initial mock financial records
+    └── components/             # Reusable UI cards, charts, and modal components
+```
+
+---
+
+## 📄 License
+This project is open-source and available under the **MIT License**.
