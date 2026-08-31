@@ -1,6 +1,6 @@
-# Apex Finance — Institutional Dark Finance Dashboard
+# Finance Dashboard — Interactive Financial Analytics Dashboard
 
-A production-grade, dark-first institutional finance dashboard web app built with a modern fintech aesthetic (near-black `#0B0F14` background, subtle glassmorphic surfaces, tabular monospace metrics, and emerald accents).
+An interactive dashboard for financial data visualization, KPI tracking, transaction analysis, and reporting. The project demonstrates data organization, dashboard design, interactive analytics, filtering, and CSV-based reporting.
 
 ## 🚀 Instant Launch (Zero Installation Required)
 
